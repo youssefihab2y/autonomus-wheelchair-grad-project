@@ -1,0 +1,29 @@
+# Python Requirements for Autonomous Wheelchair Project
+#
+# Note: This project primarily uses ROS 2 packages managed via package.xml files.
+# Most dependencies are installed via the ROS 2 package manager (apt).
+#
+# Install ROS 2 packages first:
+#   sudo apt install -y ros-humble-desktop ros-humble-ros-gz-sim ros-humble-ros-gz-bridge
+#
+# Then install Python dependencies (if needed):
+#   pip install -r requirements.txt
+
+# Core Python packages (usually included with ROS 2 Humble)
+# These are listed for reference - install via ROS 2 package manager:
+# - rclpy (ROS 2 Python client library)
+# - launch (ROS 2 launch system)
+# - launch_ros (ROS 2 launch extensions)
+
+# Build and development tools
+setuptools>=65.0.0
+wheel>=0.38.0
+
+# Optional: Development and testing tools (uncomment if needed)
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+# pytest-ros>=0.1.0
+# flake8>=6.0.0
+# black>=23.0.0
+# mypy>=1.0.0
+

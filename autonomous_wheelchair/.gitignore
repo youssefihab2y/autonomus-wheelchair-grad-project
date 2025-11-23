@@ -1,0 +1,29 @@
+# ROS 2 workspace files
+build/
+install/
+log/
+*.pyc
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+
+# Python
+*.egg-info/
+dist/
+.pytest_cache/
+

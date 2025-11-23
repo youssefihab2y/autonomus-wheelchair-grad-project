@@ -1,0 +1,306 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ==================== CHASSIS (base frame) ==================== -->
+  <gazebo reference="chassis">
+    <turnGravityOff>false</turnGravityOff>
+  </gazebo>
+
+  <!-- ==================== GAZEBO MATERIALS ==================== -->
+  <gazebo reference="base_uplayer_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <material>Gazebo/Orange</material>
+  </gazebo>
+
+  <gazebo reference="camera_stand_link">
+    <material>Gazebo/Gray</material>
+  </gazebo>
+
+  <gazebo reference="back_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <gazebo reference="seat_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <gazebo reference="wheel1_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.15</maxDepth>
+  </gazebo>
+
+  <gazebo reference="wheel2_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.15</maxDepth>
+  </gazebo>
+
+  <gazebo reference="wheel3_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.095</maxDepth>
+  </gazebo>
+
+  <gazebo reference="wheel4_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.095</maxDepth>
+  </gazebo>
+
+  <gazebo reference="imu_sensor_link">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+
+  <!-- ==================== DIRECT DIFF DRIVE PLUGIN - EXACT MATCH TO WORKING MODEL ==================== -->
+  <!--
+    Direct Gazebo diff drive plugin - EXACT same configuration as ros2-wheelchair-main
+    This matches the working implementation exactly for guaranteed compatibility
+    
+    Configuration (matches working model exactly):
+    - left_joint: left_wheel_joint
+    - right_joint: right_wheel_joint
+    - wheel_separation: 2.6 (distance between wheel centers)
+    - wheel_radius: 0.8
+    - odom_publish_frequency: 10
+    - No explicit topic (uses default model/wheelchair/cmd_vel)
+  -->
+  <gazebo>
+    <plugin filename="libignition-gazebo-diff-drive-system.so"
+            name="ignition::gazebo::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>2.6</wheel_separation>
+      <wheel_radius>0.8</wheel_radius>
+      <odom_publish_frequency>10</odom_publish_frequency>
+      <!-- Topic commented out - uses default model/autonomous_wheelchair/cmd_vel -->
+      <!-- <topic>cmd_vel</topic> -->
+    </plugin>
+  </gazebo>
+  
+  <!-- ==================== ROS 2 CONTROL PLUGIN (DISABLED) ==================== -->
+  <!--
+    DISABLED: Using direct diff drive plugin instead for better reliability
+    To re-enable ros2_control, uncomment below and comment out the diff drive plugin above
+    
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <robot_param>robot_description</robot_param>
+        <robot_param_node>robot_state_publisher</robot_param_node>
+        <parameters>$(find wheelchair_description)/config/controllers.yaml</parameters>
+      </plugin>
+    </gazebo>
+  -->
+
+  <!-- ==================== IMU SENSOR ==================== -->
+  <!-- === IMU (explicit topic + frame_id + plugin) === -->
+  <gazebo reference="imu_sensor_link">
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      
+      <!-- explicit ros topic name and frame id to avoid auto-path surprises -->
+      <topic>/wheelchair/imu</topic>
+      <frame_id>imu_sensor_link</frame_id>
+      
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0017</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0017</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0017</stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+      
+      <!-- plugin: explicit IMU system plugin (filename must match your installation) -->
+      <!-- Note: Plugin filename verified to exist: libignition-gazebo-imu-system.so -->
+      <plugin filename="ignition-gazebo-imu-system" name="gz::sim::systems::Imu">
+        <topic>/wheelchair/imu</topic>
+        <frame_id>imu_sensor_link</frame_id>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- ==================== RGB CAMERA ==================== -->
+  <!-- === RGB Camera (namespaced topic, explicit frame id) === -->
+  <gazebo reference="camera_link">
+    <sensor name="camera_rgb" type="camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+      
+      <!-- explicit namespaced topic and frame -->
+      <topic>/wheelchair/camera/image_raw</topic>
+      <frame_id>camera_link</frame_id>
+      
+      <camera name="camera">
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      
+      <!-- Camera works through world's Sensors system plugin - no explicit plugin needed -->
+      <!-- Explicit topic name helps bridge find the correct topic -->
+    </sensor>
+  </gazebo>
+
+  <!-- ==================== DEPTH CAMERA ==================== -->
+  <!-- === Depth Camera (namespaced topics) === -->
+  <gazebo reference="camera_link">
+    <sensor name="depth_camera" type="depth_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+      
+      <topic>/wheelchair/camera/depth</topic>
+      <frame_id>camera_link</frame_id>
+      
+      <camera name="depth_camera">
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R_FLOAT32</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>50</far>
+        </clip>
+        <depth_camera>
+          <output>points</output>
+        </depth_camera>
+      </camera>
+      
+      <!-- Depth camera works through world's Sensors system plugin - no explicit plugin needed -->
+      <!-- Explicit topic name helps bridge find the correct topic -->
+    </sensor>
+  </gazebo>
+
+  <!-- ==================== LIDAR SENSOR ==================== -->
+  <!-- === GPU LIDAR (for RTX GPU systems) === -->
+  <gazebo reference="base_laser">
+    <sensor name="lidar" type="gpu_lidar">
+      <always_on>true</always_on>
+      <update_rate>40</update_rate>
+      <visualize>true</visualize>
+      
+      <!-- namespaced topic - easier for bridge mapping -->
+      <topic>/wheelchair/scan</topic>
+      <frame_id>base_laser</frame_id>
+      
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>360</samples>          <!-- reduce from 720 to reduce load while debugging -->
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>10.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </lidar>
+      
+      <!-- GPU lidar works through world's Sensors system plugin - no explicit plugin needed -->
+      <!-- Explicit topic name helps bridge find the correct topic -->
+    </sensor>
+  </gazebo>
+  
+  <!-- If you want GPU variant later, keep the original but comment it out while debugging:
+  <gazebo reference="base_laser">
+    <sensor name="lidar_gpu" type="gpu_lidar">
+      <always_on>true</always_on>
+      <update_rate>40</update_rate>
+      <visualize>true</visualize>
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159265</min_angle>
+            <max_angle>3.14159265</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>10.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </lidar>
+    </sensor>
+  </gazebo>
+  -->
+
+</robot>
+
