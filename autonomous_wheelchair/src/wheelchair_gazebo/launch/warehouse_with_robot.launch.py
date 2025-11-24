@@ -50,7 +50,24 @@ def generate_launch_description():
         }.items()
     )
     
+    # Joint State Publisher
+    # Publishes joint states for robot_state_publisher
+    # CRITICAL: robot_state_publisher needs /joint_states for continuous joints (wheels)
+    # If Gazebo doesn't publish joint_states, this node will provide default values
+    joint_state_publisher_node = Node(
+        package='joint_state_publisher',
+        executable='joint_state_publisher',
+        name='joint_state_publisher',
+        output='screen',
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'source_list': ['/joint_states']}  # Try to use Gazebo's joint_states if available
+        ]
+    )
+    
     # Robot State Publisher
+    # Publishes TF transforms for all links and joints from URDF
+    # Requires /joint_states topic for continuous joints (wheels)
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -65,11 +82,9 @@ def generate_launch_description():
                     urdf_file
                 ]), value_type=str
             )}
-        ],
-        remappings=[
-            ('/tf', 'tf'),
-            ('/tf_static', 'tf_static')
         ]
+        # Removed remappings - they were causing issues
+        # robot_state_publisher should publish to standard /tf and /tf_static topics
     )
     
     # Static TF transforms to bridge Gazebo's auto-prefixed frame names
@@ -136,44 +151,56 @@ def generate_launch_description():
                 executable='parameter_bridge',
                 name='gz_bridge',
                 arguments=[
-                    # EXACT same bridge configuration as working ros2-wheelchair-main
+                    # ==================== CLOCK (CRITICAL - One-way: Gazebo -> ROS) ====================
+                    # Bridge simulation clock - REQUIRED for use_sim_time=true
+                    # Without this, ROS Time = 0.00 and TF won't publish
+                    '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+                    
+                    # ==================== JOINT STATES (CRITICAL - One-way: Gazebo -> ROS) ====================
+                    # Bridge joint states - REQUIRED for robot_state_publisher to publish wheel transforms
+                    # Continuous joints (wheels) need joint positions from Gazebo
+                    # Note: Gazebo publishes joint states to model/wheelchair/joint_state topic
+                    'model/wheelchair/joint_state@sensor_msgs/msg/JointState[gz.msgs.ModelJointState',
+                    
+                    # ==================== MOVEMENT TOPICS (Bidirectional) ====================
+                    # Bridge cmd_vel: ROS <-> Gazebo
+                    # Syntax: TOPIC@ROS_MSG_TYPE@GAZEBO_MSG_TYPE
+                    # @ means bidirectional (both directions)
+                    # Note: Bridge creates the SAME topic name on both ROS and Gazebo sides
+                    # We bridge model/wheelchair/cmd_vel, then remap ROS side to /cmd_vel
                     'model/wheelchair/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+                    # Bridge odometry: ROS <-> Gazebo
                     'model/wheelchair/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-                    # Also bridge to standard ROS topics for compatibility
-                    '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-                    '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-                    # Sensor topics - bridge from Gazebo to ROS (using [ for one-way)
-                    '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-                    '/imu_data@sensor_msgs/msg/Imu[gz.msgs.IMU',
-                    # Also try namespaced topics (if plugins use them)
+                    
+                    # ==================== SENSOR TOPICS (One-way: Gazebo -> ROS) ====================
+                    # Syntax: ROS_TOPIC@ROS_MSG_TYPE[GAZEBO_MSG_TYPE
+                    # [ means one-way (Gazebo to ROS only)
+                    # LiDAR: Try multiple possible topic paths
                     '/wheelchair/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+                    # IMU: Try multiple possible topic paths
                     '/wheelchair/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+                    # RGB Camera
                     '/wheelchair/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
+                    # Depth Camera
                     '/wheelchair/camera/depth@sensor_msgs/msg/Image[gz.msgs.Image',
+                    # Depth Point Cloud
                     '/wheelchair/camera/depth/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-                    # Also try full paths (fallback)
-                    '/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/lidar_cpu/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-                    '/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/imu_sensor/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-                    '/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/camera_rgb/image@sensor_msgs/msg/Image[gz.msgs.Image',
-                    '/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/depth_camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
-                    '/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/depth_camera/depth_image/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-                    '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
                 ],
                 remappings=[
-                    # Remap to simpler ROS topic names
-                    ('/scan', '/scan'),
-                    ('/imu_data', '/imu_data'),
+                    # Remap topic names to standard ROS topic names
+                    # Format: (from_topic, to_topic)
+                    # Clock - bridge publishes to /clock (standard ROS topic)
+                    # Joint states - bridge publishes to model/wheelchair/joint_state, remap to /joint_states
+                    ('model/wheelchair/joint_state', '/joint_states'),
+                    # Movement topics - bridge creates 'model/wheelchair/cmd_vel', remap to '/cmd_vel'
+                    ('model/wheelchair/cmd_vel', '/cmd_vel'),
+                    ('model/wheelchair/odometry', '/odom'),
+                    # Sensor topics
                     ('/wheelchair/scan', '/scan'),
                     ('/wheelchair/imu', '/imu_data'),
                     ('/wheelchair/camera/image_raw', '/camera/image'),
                     ('/wheelchair/camera/depth', '/camera/depth_image'),
                     ('/wheelchair/camera/depth/points', '/camera/points'),
-                    # Full path remappings
-                    ('/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/lidar_cpu/scan', '/scan'),
-                    ('/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/imu_sensor/imu', '/imu_data'),
-                    ('/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/camera_rgb/image', '/camera/image'),
-                    ('/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/depth_camera/depth_image', '/camera/depth_image'),
-                    ('/world/world_demo/model/autonomous_wheelchair/link/chassis/sensor/depth_camera/depth_image/points', '/camera/points'),
                 ],
                 output='screen'
             )
@@ -231,6 +258,7 @@ def generate_launch_description():
         ),
         set_plugin_path,
         gz_sim,
+        joint_state_publisher_node,  # CRITICAL: Provides joint states for robot_state_publisher
         robot_state_publisher_node,
         static_tf_lidar,  # Bridge Gazebo's prefixed frame name to TF tree frame
         static_tf_depth,  # Bridge Gazebo's prefixed frame name to TF tree frame

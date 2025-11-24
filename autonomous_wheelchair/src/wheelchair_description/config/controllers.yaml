@@ -1,6 +1,14 @@
 # ROS 2 Control Controller Configuration
 # Following official controller_manager format
 # Reference: https://control.ros.org/humble/doc/ros2_control/controller_manager/doc/userdoc.html
+#
+# NOTE: This configuration is currently DISABLED in the launch file.
+# The system uses direct Gazebo diff drive plugin instead (see wheelchair.gazebo.xacro).
+# To enable ros2_control:
+# 1. Uncomment ros2_control plugin in wheelchair.gazebo.xacro
+# 2. Comment out diff drive plugin in wheelchair.gazebo.xacro
+# 3. Uncomment controller_manager_node in warehouse_with_robot.launch.py
+# 4. Uncomment load_and_activate_controllers in warehouse_with_robot.launch.py
 
 controller_manager:
   ros__parameters:
@@ -22,13 +30,14 @@ controller_manager:
 skid_steer_controller:
   ros__parameters:
     # Wheel joint names - MUST match URDF joint names exactly
-    left_wheel_names: ["wheel2_joint", "wheel4_joint"]   # Left side wheels
-    right_wheel_names: ["wheel1_joint", "wheel3_joint"]  # Right side wheels
+    # Consistent naming: wheel1=back_right, wheel2=back_left, wheel3=front_right, wheel4=front_left
+    left_wheel_names: ["wheel2_joint", "wheel4_joint"]   # Left side: back_left (wheel2), front_left (wheel4)
+    right_wheel_names: ["wheel1_joint", "wheel3_joint"]  # Right side: back_right (wheel1), front_right (wheel3)
     
-    # Kinematic parameters
-    wheel_separation: 0.52      # Distance between left and right wheel centers (m)
-    wheels_per_side: 2          # Number of wheels per side
-    wheel_radius: 0.15          # Wheel radius (m) - using back wheel radius
+    # Kinematic parameters (consistent with URDF)
+    wheel_separation: 0.52      # Lateral separation between left and right wheel centers (m)
+    wheels_per_side: 2          # Number of wheels per side (4-wheel skid steer)
+    wheel_radius: 0.15          # Back wheel radius (m) - primary drive wheels
     
     # Wheel calibration multipliers (for fine-tuning)
     wheel_separation_multiplier: 1.0
@@ -72,6 +81,3 @@ skid_steer_controller:
     
     # Velocity filtering
     velocity_rolling_window_size: 10
-    
-    # Base frame (duplicate for clarity)
-    base_frame_id: chassis

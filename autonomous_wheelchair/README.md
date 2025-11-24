@@ -66,7 +66,7 @@ autonomous_wheelchair/
 ├── build/                          # Build files (generated, gitignored)
 ├── install/                        # Install files (generated, gitignored)
 └── log/                            # Log files (generated, gitignored)
-```
+   ```
 
 ## ✨ Features
 
@@ -120,7 +120,7 @@ See [QUICK_START.md](./QUICK_START.md) for detailed troubleshooting guide.
 
 ---
 
-**ROS 2 Version:** Humble  
-**Gazebo Version:** Fortress (6.17.0)  
+**ROS 2 Version:** Humble
+**Gazebo Version:** Fortress (6.17.0)
 **License:** MIT
 
