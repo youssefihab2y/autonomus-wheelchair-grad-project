@@ -2,6 +2,8 @@
 
 ROS 2 Humble + Gazebo Fortress project for autonomous wheelchair simulation with obstacle avoidance.
 
+> ℹ️ **Latest update:** the Gazebo launch file now spawns the wheelchair at `z=0.15 m`, so the wheels always touch the ground immediately—no extra tweaking required before testing movement.
+
 ## 📋 Requirements
 
 - **Ubuntu 22.04 LTS**
@@ -41,7 +43,12 @@ sudo apt install -y \
    ros2 launch wheelchair_gazebo warehouse_with_robot.launch.py
    ```
 
-4. **Control the robot (in a new terminal):**
+4. **(Optional) Clear stale processes before relaunching:**
+   ```bash
+   ./STOP_ALL.sh
+   ```
+
+5. **Control the robot (in a new terminal):**
    ```bash
    source /opt/ros/humble/setup.bash
    source install/setup.bash
@@ -108,9 +115,17 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 - **Space**: Emergency stop
 - **q**: Quit
 
+## 🛠️ Helper Scripts
+
+- `STOP_ALL.sh` – Terminates lingering Gazebo/ROS 2 processes before a fresh launch
+- `START_KEYBOARD_CONTROL.sh` – Sources the workspace and starts `teleop_twist_keyboard`
+- `TEST_MOVEMENT.sh` – Publishes a short `/cmd_vel` command to smoke-test wheel motion
+- `ACTIVATE_CONTROLLERS.sh` – Reactivates the `ros2_control` stack if you switch away from the direct Gazebo diff-drive plugin
+- `launch_keyboard_teleop.sh` – Convenience launcher if you prefer a dedicated terminal script
+
 ## 🔧 Troubleshooting
 
-See [QUICK_START.md](./QUICK_START.md) for detailed troubleshooting guide.
+See [QUICK_START.md](./QUICK_START.md) for detailed troubleshooting steps, including RViz/Gazebo debugging tips.
 
 ## 📝 Notes
 

@@ -53,15 +53,16 @@ def generate_launch_description():
     # Joint State Publisher
     # Publishes joint states for robot_state_publisher
     # CRITICAL: robot_state_publisher needs /joint_states for continuous joints (wheels)
-    # If Gazebo doesn't publish joint_states, this node will provide default values
+    # Reads URDF and publishes joint states with default positions (0.0 for continuous joints)
+    # NOTE: Do NOT use source_list - that makes it subscribe instead of publish from URDF
     joint_state_publisher_node = Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
         name='joint_state_publisher',
         output='screen',
         parameters=[
-            {'use_sim_time': use_sim_time},
-            {'source_list': ['/joint_states']}  # Try to use Gazebo's joint_states if available
+            {'use_sim_time': use_sim_time}
+            # Removed source_list - joint_state_publisher should publish from URDF, not subscribe
         ]
     )
     
@@ -132,7 +133,11 @@ def generate_launch_description():
                     '-topic', 'robot_description',
                     '-x', x_pose,
                     '-y', y_pose,
-                    '-z', '2.0',  # Match working model height (z=2.0)
+                    '-z', '0.15',  # Spawn at wheel radius height so wheels touch ground
+                    # Calculation: base_uplayer_link is at z=0.21 from chassis
+                    # Wheels are at z=-0.15 from base_uplayer_link
+                    # So wheels are at z=0.21-0.15=0.06 from chassis center
+                    # To make wheels touch ground (z=0), spawn chassis at z=0.15
                     '-allow_renaming', 'false'  # Prevent automatic renaming (wheelchair_0, etc.)
                 ],
                 output='screen'

@@ -105,15 +105,12 @@
       <right_joint>wheel1_joint</right_joint>    <!-- Back right wheel -->
       <wheel_separation>0.52</wheel_separation>  <!-- Lateral separation (m) -->
       <wheel_radius>0.15</wheel_radius>         <!-- Back wheel radius (m) -->
-      <odom_publish_frequency>10</odom_publish_frequency>
+      <odom_publish_frequency>5</odom_publish_frequency>  <!-- Reduced from 10 to 5 Hz for better performance -->
       <odom_frame_id>odom</odom_frame_id>        <!-- Odometry frame (ROS standard) -->
-      <robot_base_frame>chassis</robot_base_frame>  <!-- Base frame (matches URDF) -->
-      <!-- 
-        Note: cmd_vel and odometry topics use default Gazebo naming:
-        - cmd_vel: model/wheelchair/cmd_vel
-        - odometry: model/wheelchair/odometry
-        These are bridged to ROS topics in the launch file.
-      -->
+      <robot_base_frame>base_uplayer_link</robot_base_frame>  <!-- Base frame where wheels are attached (not chassis) -->
+      <!-- Note: Plugin uses default topic naming: model/wheelchair/cmd_vel and model/wheelchair/odometry -->
+      <!-- These are automatically created based on model name "wheelchair" -->
+      <!-- No explicit topic parameter needed - plugin uses default naming convention -->
     </plugin>
   </gazebo>
   
@@ -133,11 +130,11 @@
 
   <!-- ==================== IMU SENSOR ==================== -->
   <!-- === IMU (explicit topic + frame_id + plugin) === -->
-  <gazebo reference="imu_sensor_link">
-    <sensor name="imu_sensor" type="imu">
-      <always_on>true</always_on>
-      <update_rate>100</update_rate>
-      <visualize>true</visualize>
+        <gazebo reference="imu_sensor_link">
+          <sensor name="imu_sensor" type="imu">
+            <always_on>true</always_on>
+            <update_rate>30</update_rate>  <!-- Reduced from 100 to 30 Hz for better performance -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
       
       <!-- explicit ros topic name and frame id to avoid auto-path surprises -->
       <topic>/wheelchair/imu</topic>
@@ -197,23 +194,23 @@
 
   <!-- ==================== RGB CAMERA ==================== -->
   <!-- === RGB Camera (namespaced topic, explicit frame id) === -->
-  <gazebo reference="camera_link">
-    <sensor name="camera_rgb" type="camera">
-      <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <visualize>true</visualize>
-      
-      <!-- explicit namespaced topic and frame -->
-      <topic>/wheelchair/camera/image_raw</topic>
-      <frame_id>camera_link</frame_id>
-      
-      <camera name="camera">
-        <horizontal_fov>1.047</horizontal_fov>
-        <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
-        </image>
+        <gazebo reference="camera_link">
+          <sensor name="camera_rgb" type="camera">
+            <always_on>true</always_on>
+            <update_rate>10</update_rate>  <!-- Reduced from 30 to 10 Hz for better performance -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
+            
+            <!-- explicit namespaced topic and frame -->
+            <topic>/wheelchair/camera/image_raw</topic>
+            <frame_id>camera_link</frame_id>
+            
+            <camera name="camera">
+              <horizontal_fov>1.047</horizontal_fov>
+              <image>
+                <width>320</width>  <!-- Reduced from 640 to 320 for better performance -->
+                <height>240</height>  <!-- Reduced from 480 to 240 for better performance -->
+                <format>R8G8B8</format>
+              </image>
         <clip>
           <near>0.1</near>
           <far>100</far>
@@ -227,21 +224,21 @@
 
   <!-- ==================== DEPTH CAMERA ==================== -->
   <!-- === Depth Camera (namespaced topics) === -->
-  <gazebo reference="camera_link">
-    <sensor name="depth_camera" type="depth_camera">
-      <always_on>true</always_on>
-      <update_rate>30</update_rate>
-      <visualize>true</visualize>
-      
-      <topic>/wheelchair/camera/depth</topic>
-      <frame_id>camera_link</frame_id>
-      
-      <camera name="depth_camera">
-        <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R_FLOAT32</format>
-        </image>
+        <gazebo reference="camera_link">
+          <sensor name="depth_camera" type="depth_camera">
+            <always_on>true</always_on>
+            <update_rate>10</update_rate>  <!-- Reduced from 30 to 10 Hz for better performance -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
+            
+            <topic>/wheelchair/camera/depth</topic>
+            <frame_id>camera_link</frame_id>
+            
+            <camera name="depth_camera">
+              <image>
+                <width>320</width>  <!-- Reduced from 640 to 320 for better performance -->
+                <height>240</height>  <!-- Reduced from 480 to 240 for better performance -->
+                <format>R_FLOAT32</format>
+              </image>
         <clip>
           <near>0.1</near>
           <far>50</far>
@@ -258,30 +255,30 @@
 
   <!-- ==================== LIDAR SENSOR ==================== -->
   <!-- === GPU LIDAR (for RTX GPU systems) === -->
-  <gazebo reference="base_laser">
-    <sensor name="lidar" type="gpu_lidar">
-      <always_on>true</always_on>
-      <update_rate>40</update_rate>
-      <visualize>true</visualize>
-      
-      <!-- namespaced topic - easier for bridge mapping -->
-      <topic>/wheelchair/scan</topic>
-      <frame_id>base_laser</frame_id>
-      
-      <lidar>
-        <scan>
-          <horizontal>
-            <samples>360</samples>          <!-- reduce from 720 to reduce load while debugging -->
-            <resolution>1</resolution>
-            <min_angle>-3.14159</min_angle>
-            <max_angle>3.14159</max_angle>
-          </horizontal>
-        </scan>
-        <range>
-          <min>0.1</min>
-          <max>10.0</max>
-          <resolution>0.01</resolution>
-        </range>
+        <gazebo reference="base_laser">
+          <sensor name="lidar" type="gpu_lidar">
+            <always_on>true</always_on>
+            <update_rate>10</update_rate>  <!-- Reduced from 40 to 10 Hz for better performance -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
+            
+            <!-- namespaced topic - easier for bridge mapping -->
+            <topic>/wheelchair/scan</topic>
+            <frame_id>base_laser</frame_id>
+            
+            <lidar>
+              <scan>
+                <horizontal>
+                  <samples>180</samples>  <!-- Reduced from 360 to 180 for better performance -->
+                  <resolution>1</resolution>
+                  <min_angle>-3.14159</min_angle>
+                  <max_angle>3.14159</max_angle>
+                </horizontal>
+              </scan>
+              <range>
+                <min>0.1</min>
+                <max>10.0</max>
+                <resolution>0.05</resolution>  <!-- Reduced from 0.01 to 0.05 for better performance -->
+              </range>
         <noise>
           <type>gaussian</type>
           <mean>0.0</mean>
