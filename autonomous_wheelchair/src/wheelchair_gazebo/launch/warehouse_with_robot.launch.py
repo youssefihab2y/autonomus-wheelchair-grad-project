@@ -172,10 +172,10 @@ def generate_launch_description():
                     # Syntax: TOPIC@ROS_MSG_TYPE@GAZEBO_MSG_TYPE
                     # @ means bidirectional (both directions)
                     # Note: Bridge creates the SAME topic name on both ROS and Gazebo sides
-                    # We bridge model/wheelchair/cmd_vel, then remap ROS side to /cmd_vel
-                    'model/wheelchair/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+                    # Gazebo plugin now publishes/subscribes on cmd_vel / odom topics explicitly
+                    'cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
                     # Bridge odometry: ROS <-> Gazebo
-                    'model/wheelchair/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry',
+                    'odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
                     
                     # ==================== SENSOR TOPICS (One-way: Gazebo -> ROS) ====================
                     # Syntax: ROS_TOPIC@ROS_MSG_TYPE[GAZEBO_MSG_TYPE
@@ -197,9 +197,9 @@ def generate_launch_description():
                     # Clock - bridge publishes to /clock (standard ROS topic)
                     # Joint states - bridge publishes to model/wheelchair/joint_state, remap to /joint_states
                     ('model/wheelchair/joint_state', '/joint_states'),
-                    # Movement topics - bridge creates 'model/wheelchair/cmd_vel', remap to '/cmd_vel'
-                    ('model/wheelchair/cmd_vel', '/cmd_vel'),
-                    ('model/wheelchair/odometry', '/odom'),
+                    # Movement topics - Gazebo plugin uses 'cmd_vel'/'odom', remap ROS side to standard topics
+                    ('cmd_vel', '/cmd_vel'),
+                    ('odom', '/odom'),
                     # Sensor topics
                     ('/wheelchair/scan', '/scan'),
                     ('/wheelchair/imu', '/imu_data'),

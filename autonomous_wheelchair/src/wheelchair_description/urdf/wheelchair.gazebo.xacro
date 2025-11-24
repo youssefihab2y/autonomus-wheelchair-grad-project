@@ -108,9 +108,9 @@
       <odom_publish_frequency>5</odom_publish_frequency>  <!-- Reduced from 10 to 5 Hz for better performance -->
       <odom_frame_id>odom</odom_frame_id>        <!-- Odometry frame (ROS standard) -->
       <robot_base_frame>base_uplayer_link</robot_base_frame>  <!-- Base frame where wheels are attached (not chassis) -->
-      <!-- Note: Plugin uses default topic naming: model/wheelchair/cmd_vel and model/wheelchair/odometry -->
-      <!-- These are automatically created based on model name "wheelchair" -->
-      <!-- No explicit topic parameter needed - plugin uses default naming convention -->
+      <!-- Fortress DiffDrive plugin supports explicit command/odom topic tags -->
+      <topic>cmd_vel</topic>                     <!-- Gazebo-side command topic -->
+      <odom_topic>odom</odom_topic>              <!-- Gazebo-side odometry topic -->
     </plugin>
   </gazebo>
   

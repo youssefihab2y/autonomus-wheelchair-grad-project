@@ -2,7 +2,7 @@
 
 ROS 2 Humble + Gazebo Fortress project for autonomous wheelchair simulation with obstacle avoidance.
 
-> ℹ️ **Latest update:** the Gazebo launch file now spawns the wheelchair at `z=0.15 m`, so the wheels always touch the ground immediately—no extra tweaking required before testing movement.
+> ℹ️ **Latest update:** the Gazebo launch file now spawns the wheelchair at `z=0.15 m`, so the wheels always touch the ground immediately—no extra tweaking required before testing movement. The Gazebo diff-drive plugin now uses explicit `cmd_vel` / `odom` topics, so ROS commands and odometry always line up with Gazebo.
 
 ## 📋 Requirements
 
@@ -54,6 +54,14 @@ sudo apt install -y \
    source install/setup.bash
    ros2 run teleop_twist_keyboard teleop_twist_keyboard
    ```
+
+6. **Smoke-test movement (publishes one forward command):**
+   ```bash
+   ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
+     "{linear: {x: 0.5, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}" \
+     --once
+   ```
+   You should immediately see the wheelchair roll forward in Gazebo and `/odom` update.
 
 For detailed instructions, see [QUICK_START.md](./QUICK_START.md).
 
