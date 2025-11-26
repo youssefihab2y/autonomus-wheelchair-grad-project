@@ -91,7 +91,7 @@
     - wheel_radius: 0.15 (back wheel radius in meters - using back wheels for drive)
     - odom_publish_frequency: 10 Hz
     - odom_frame_id: odom (ROS standard odometry frame)
-    - robot_base_frame: chassis (base frame name, matches URDF)
+    - robot_base_frame: base_uplayer_link (base frame where wheels are attached)
     
     Topic Configuration:
     - cmd_vel: Uses default Gazebo topic (model/wheelchair/cmd_vel)
@@ -258,7 +258,7 @@
         <gazebo reference="base_laser">
           <sensor name="lidar" type="gpu_lidar">
             <always_on>true</always_on>
-            <update_rate>10</update_rate>  <!-- Reduced from 40 to 10 Hz for better performance -->
+            <update_rate>5</update_rate>  <!-- Further reduced for SLAM stability -->
             <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
             
             <!-- namespaced topic - easier for bridge mapping -->

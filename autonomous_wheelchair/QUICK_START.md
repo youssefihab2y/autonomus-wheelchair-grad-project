@@ -27,7 +27,7 @@ ros2 launch wheelchair_gazebo warehouse_with_robot.launch.py
 cd /home/nadafouad/Downloads/Autonomous-Wheelchair-master-branch/autonomous_wheelchair
 source /opt/ros/humble/setup.bash
 source install/setup.bash
-./launch_keyboard_teleop.sh
+./START_KEYBOARD_CONTROL.sh
 ```
 
 Or manually:
@@ -50,70 +50,33 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ## 🧪 Testing
 
-### Test Robot Movement
-```bash
-./TEST_MOVEMENT.sh
-```
-
-This script will:
-- Check if simulation is running
-- Verify controllers are active
-- Check hardware interfaces
-- Test movement commands
-- Verify joint velocities
-
 ### Manual Testing
 ```bash
 # Send a forward command
 ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist \
   "{linear: {x: 0.5, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
 
-# Check controller status
-ros2 service call /controller_manager/list_controllers \
-  controller_manager_msgs/srv/ListControllers {}
-
 # Check joint states
 ros2 topic echo /joint_states
+
+# Check odometry
+ros2 topic echo /odom
 ```
 
 ## 🔧 Troubleshooting
 
 ### Robot Not Moving?
 
-1. **Check Controllers:**
-   ```bash
-   ./ACTIVATE_CONTROLLERS.sh
-   ```
-
-2. **Check Topics:**
+1. **Check Topics:**
    ```bash
    ros2 topic list | grep cmd_vel
    ros2 topic list | grep joint_states
    ```
 
-3. **Check Controller Status:**
-   ```bash
-   ros2 service call /controller_manager/list_controllers \
-     controller_manager_msgs/srv/ListControllers {} | grep state
-   ```
-
-4. **Verify cmd_vel Relay:**
-   ```bash
-   ros2 node list | grep cmd_vel_relay
-   ```
-
-5. **Check Gazebo:**
+2. **Check Gazebo:**
    - Is simulation paused? (Press Play)
    - Are wheels touching the ground?
    - Check for collision penetrations
-
-### Controllers Not Activating?
-
-1. **Wait longer** - Controllers activate at 25 seconds after launch
-2. **Manually activate:**
-   ```bash
-   ./ACTIVATE_CONTROLLERS.sh
-   ```
 
 ### Keyboard Control Not Working?
 
@@ -122,12 +85,7 @@ ros2 topic echo /joint_states
    ros2 topic list | grep cmd_vel
    ```
 
-2. **Check if relay is running:**
-   ```bash
-   ros2 node list | grep relay
-   ```
-
-3. **Test with manual command:**
+2. **Test with manual command:**
    ```bash
    ros2 topic pub -r 10 /cmd_vel geometry_msgs/msg/Twist \
      "{linear: {x: 0.3}}"
@@ -151,24 +109,21 @@ autonomous_wheelchair/
 │   ├── wheelchair_description/    # Robot URDF and configs
 │   └── wheelchair_gazebo/         # Gazebo launch files
 ├── STOP_ALL.sh                    # Stop all processes
-├── TEST_MOVEMENT.sh               # Test robot movement
-├── launch_keyboard_teleop.sh      # Launch keyboard control
-└── ACTIVATE_CONTROLLERS.sh        # Activate controllers manually
+└── START_KEYBOARD_CONTROL.sh     # Launch keyboard control
 ```
 
 ## 🔗 Key Topics
 
 - `/cmd_vel` - Velocity commands (geometry_msgs/Twist)
+- `/odom` - Odometry (nav_msgs/Odometry)
 - `/joint_states` - Joint positions and velocities
-- `/skid_steer_controller/cmd_vel_unstamped` - Controller command topic
-- `/skid_steer_controller/odom` - Odometry
+- `/scan` - LiDAR scan data
 
 ## 📝 Notes
 
 - **Keyboard teleop must run in a separate terminal** (it needs an interactive terminal)
-- **Wait ~45 seconds** after launch for everything to initialize
-- **Controllers activate automatically** at 25 seconds
-- **cmd_vel relay** bridges `/cmd_vel` to controller's expected topic
+- **Wait ~15-20 seconds** after launch for Gazebo to fully initialize
+- **Direct Gazebo diff drive plugin** is used (ros2_control disabled for simplicity)
 
 ## 🆘 Emergency Stop
 
@@ -179,7 +134,6 @@ autonomous_wheelchair/
 Or manually:
 ```bash
 killall -9 gz
-killall -9 ros2_control_node
 pkill -9 -f "ros2 launch"
 ```
 

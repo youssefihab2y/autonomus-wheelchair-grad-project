@@ -13,7 +13,7 @@ wheelchair_description/
 ├── config/
 │   └── controllers.yaml               # ros2_control controller configuration
 ├── launch/
-│   └── spawn_robot.launch.py          # Launch file to spawn robot in Gazebo
+│   └── view_robot_rviz2.launch.py     # Launch file for RViz visualization
 └── meshes/                            # 3D mesh files (if needed)
 ```
 
@@ -62,7 +62,7 @@ source install/setup.bash
 2. **In another terminal, spawn the robot:**
    ```bash
    source install/setup.bash
-   ros2 launch wheelchair_description spawn_robot.launch.py
+   ros2 launch wheelchair_gazebo warehouse_with_robot.launch.py
    ```
 
 ### View Robot in RViz2

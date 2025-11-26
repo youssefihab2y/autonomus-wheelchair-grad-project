@@ -127,9 +127,6 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 - `STOP_ALL.sh` – Terminates lingering Gazebo/ROS 2 processes before a fresh launch
 - `START_KEYBOARD_CONTROL.sh` – Sources the workspace and starts `teleop_twist_keyboard`
-- `TEST_MOVEMENT.sh` – Publishes a short `/cmd_vel` command to smoke-test wheel motion
-- `ACTIVATE_CONTROLLERS.sh` – Reactivates the `ros2_control` stack if you switch away from the direct Gazebo diff-drive plugin
-- `launch_keyboard_teleop.sh` – Convenience launcher if you prefer a dedicated terminal script
 
 ## 🔧 Troubleshooting
 

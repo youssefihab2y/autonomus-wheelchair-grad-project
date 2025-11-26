@@ -47,7 +47,7 @@ skid_steer_controller:
     # Publishing configuration
     publish_rate: 50.0          # Odometry publishing rate (Hz)
     odom_frame_id: odom         # Odometry frame name
-    base_frame_id: chassis      # Base frame name (must match URDF)
+    base_frame_id: base_uplayer_link  # Base frame name (where wheels are attached)
     
     # Odometry covariance matrices
     pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]

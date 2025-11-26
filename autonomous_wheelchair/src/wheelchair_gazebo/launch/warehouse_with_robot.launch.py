@@ -25,7 +25,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     x_pose = LaunchConfiguration('x_pose', default='0.0')
     y_pose = LaunchConfiguration('y_pose', default='0.0')
-    z_pose = LaunchConfiguration('z_pose', default='0.1')
+    z_pose = LaunchConfiguration('z_pose', default='0.15')
     
     # URDF file path - using original wheelchair model
     urdf_file = PathJoinSubstitution([
@@ -50,11 +50,7 @@ def generate_launch_description():
         }.items()
     )
     
-    # Joint State Publisher
-    # Publishes joint states for robot_state_publisher
-    # CRITICAL: robot_state_publisher needs /joint_states for continuous joints (wheels)
-    # Reads URDF and publishes joint states with default positions (0.0 for continuous joints)
-    # NOTE: Do NOT use source_list - that makes it subscribe instead of publish from URDF
+    # Joint State Publisher - publishes joint states from URDF for robot_state_publisher
     joint_state_publisher_node = Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
@@ -62,13 +58,10 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'use_sim_time': use_sim_time}
-            # Removed source_list - joint_state_publisher should publish from URDF, not subscribe
         ]
     )
     
-    # Robot State Publisher
-    # Publishes TF transforms for all links and joints from URDF
-    # Requires /joint_states topic for continuous joints (wheels)
+    # Robot State Publisher - publishes TF transforms from URDF
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -84,13 +77,9 @@ def generate_launch_description():
                 ]), value_type=str
             )}
         ]
-        # Removed remappings - they were causing issues
-        # robot_state_publisher should publish to standard /tf and /tf_static topics
     )
     
-    # Static TF transforms to bridge Gazebo's auto-prefixed frame names
-    # Gazebo prefixes sensor frames with model name (autonomous_wheelchair/chassis/...)
-    # but TF tree uses simple URDF link names (base_laser, camera_link)
+    # Static TF transforms - bridge Gazebo's prefixed frame names to URDF frame names
     static_tf_lidar = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -117,11 +106,9 @@ def generate_launch_description():
         output='screen'
     )
     
-    # Spawn robot in Gazebo (with delay to ensure world is loaded)
-    # NOTE: Always stop simulation before restarting to prevent duplicates
-    # Use ./STOP_ALL.sh before launching to clean up existing robots
+    # Spawn robot in Gazebo (delayed to ensure world is loaded)
     spawn_entity_node = TimerAction(
-        period=5.0,  # Wait 5 seconds for world to fully load
+        period=5.0,
         actions=[
             Node(
                 package='ros_gz_sim',
@@ -129,16 +116,12 @@ def generate_launch_description():
                 name='spawn_wheelchair',
                 arguments=[
                     '-world', 'world_demo',
-                    '-entity', 'wheelchair',  # Match working model name exactly
+                    '-entity', 'wheelchair',
                     '-topic', 'robot_description',
                     '-x', x_pose,
                     '-y', y_pose,
-                    '-z', '0.15',  # Spawn at wheel radius height so wheels touch ground
-                    # Calculation: base_uplayer_link is at z=0.21 from chassis
-                    # Wheels are at z=-0.15 from base_uplayer_link
-                    # So wheels are at z=0.21-0.15=0.06 from chassis center
-                    # To make wheels touch ground (z=0), spawn chassis at z=0.15
-                    '-allow_renaming', 'false'  # Prevent automatic renaming (wheelchair_0, etc.)
+                    '-z', z_pose,
+                    '-allow_renaming', 'false'
                 ],
                 output='screen'
             )
@@ -146,61 +129,28 @@ def generate_launch_description():
     )
     
     # Bridge for ROS 2 <-> Gazebo communication
-    # Simplified: Direct diff drive plugin handles cmd_vel and odometry
-    # Using TimerAction to delay bridge startup until Gazebo is ready
     bridge_node = TimerAction(
-        period=6.0,  # Wait 6 seconds for Gazebo to initialize
+        period=6.0,
         actions=[
             Node(
                 package='ros_gz_bridge',
                 executable='parameter_bridge',
                 name='gz_bridge',
                 arguments=[
-                    # ==================== CLOCK (CRITICAL - One-way: Gazebo -> ROS) ====================
-                    # Bridge simulation clock - REQUIRED for use_sim_time=true
-                    # Without this, ROS Time = 0.00 and TF won't publish
                     '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-                    
-                    # ==================== JOINT STATES (CRITICAL - One-way: Gazebo -> ROS) ====================
-                    # Bridge joint states - REQUIRED for robot_state_publisher to publish wheel transforms
-                    # Continuous joints (wheels) need joint positions from Gazebo
-                    # Note: Gazebo publishes joint states to model/wheelchair/joint_state topic
                     'model/wheelchair/joint_state@sensor_msgs/msg/JointState[gz.msgs.ModelJointState',
-                    
-                    # ==================== MOVEMENT TOPICS (Bidirectional) ====================
-                    # Bridge cmd_vel: ROS <-> Gazebo
-                    # Syntax: TOPIC@ROS_MSG_TYPE@GAZEBO_MSG_TYPE
-                    # @ means bidirectional (both directions)
-                    # Note: Bridge creates the SAME topic name on both ROS and Gazebo sides
-                    # Gazebo plugin now publishes/subscribes on cmd_vel / odom topics explicitly
                     'cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-                    # Bridge odometry: ROS <-> Gazebo
                     'odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-                    
-                    # ==================== SENSOR TOPICS (One-way: Gazebo -> ROS) ====================
-                    # Syntax: ROS_TOPIC@ROS_MSG_TYPE[GAZEBO_MSG_TYPE
-                    # [ means one-way (Gazebo to ROS only)
-                    # LiDAR: Try multiple possible topic paths
                     '/wheelchair/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-                    # IMU: Try multiple possible topic paths
                     '/wheelchair/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-                    # RGB Camera
                     '/wheelchair/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
-                    # Depth Camera
                     '/wheelchair/camera/depth@sensor_msgs/msg/Image[gz.msgs.Image',
-                    # Depth Point Cloud
                     '/wheelchair/camera/depth/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
                 ],
                 remappings=[
-                    # Remap topic names to standard ROS topic names
-                    # Format: (from_topic, to_topic)
-                    # Clock - bridge publishes to /clock (standard ROS topic)
-                    # Joint states - bridge publishes to model/wheelchair/joint_state, remap to /joint_states
                     ('model/wheelchair/joint_state', '/joint_states'),
-                    # Movement topics - Gazebo plugin uses 'cmd_vel'/'odom', remap ROS side to standard topics
                     ('cmd_vel', '/cmd_vel'),
                     ('odom', '/odom'),
-                    # Sensor topics
                     ('/wheelchair/scan', '/scan'),
                     ('/wheelchair/imu', '/imu_data'),
                     ('/wheelchair/camera/image_raw', '/camera/image'),
@@ -212,33 +162,8 @@ def generate_launch_description():
         ]
     )
     
-    # ==================== ROS 2 CONTROL DISABLED ====================
-    # Using direct Gazebo diff drive plugin instead (like ros2-wheelchair-main)
-    # This eliminates:
-    # - Controller manager initialization delays
-    # - Controller activation timing issues
-    # - Topic relay complexity
-    # - Hardware interface claiming problems
-    #
-    # The direct plugin approach:
-    # - Works immediately (no delays needed)
-    # - Simpler (fewer components)
-    # - More reliable (no activation failures)
-    # - Faster startup (no controller manager)
-    #
-    # If you need ros2_control features, you can re-enable by:
-    # 1. Commenting out the diff drive plugin in wheelchair.gazebo.xacro
-    # 2. Uncommenting the ros2_control plugin
-    # 3. Uncommenting the controller_manager_node, load_and_activate_controllers, and cmd_vel_relay below
-    #
-    # controller_manager_node = TimerAction(...)  # DISABLED
-    # load_and_activate_controllers = TimerAction(...)  # DISABLED
-    # cmd_vel_relay = TimerAction(...)  # DISABLED
-    
-    # Teleop Keyboard - Control wheelchair with keyboard
-    # NOTE: Teleop needs interactive terminal, so run manually in separate terminal:
-    # ros2 run teleop_twist_keyboard teleop_twist_keyboard
-    # Removed from launch file because it fails in non-interactive context
+    # Note: Using direct Gazebo diff drive plugin (ros2_control disabled)
+    # To re-enable ros2_control, see wheelchair.gazebo.xacro and controllers.yaml
     
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -258,8 +183,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'z_pose',
-            default_value='0.1',
-            description='Initial z position of the robot'
+            default_value='0.15',
+            description='Initial z position of the robot (wheels touch ground)'
         ),
         set_plugin_path,
         gz_sim,
@@ -268,11 +193,6 @@ def generate_launch_description():
         static_tf_lidar,  # Bridge Gazebo's prefixed frame name to TF tree frame
         static_tf_depth,  # Bridge Gazebo's prefixed frame name to TF tree frame
         spawn_entity_node,
-        bridge_node,  # Simplified bridge - direct diff drive plugin handles cmd_vel/odom
-        # ros2_control components removed - using direct Gazebo plugin instead
-        # controller_manager_node,  # DISABLED
-        # load_and_activate_controllers,  # DISABLED
-        # cmd_vel_relay,  # DISABLED
-        # teleop_keyboard_node removed - run manually: ros2 run teleop_twist_keyboard teleop_twist_keyboard
+        bridge_node,
     ])
 
