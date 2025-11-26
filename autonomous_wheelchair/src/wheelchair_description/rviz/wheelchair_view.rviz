@@ -4,6 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
+        - /Status1
         - /LaserScan1/Topic1
         - /Odometry1
         - /Odometry1/Topic1
@@ -12,6 +14,7 @@ Panels:
         - /Odometry1/Covariance1/Position1
         - /Odometry1/Covariance1/Orientation1
         - /RobotModel1
+        - /RobotModel1/Status1
         - /RobotModel1/Mass Properties1
       Splitter Ratio: 0.5
     Tree Height: 829
@@ -67,6 +70,8 @@ Visualization Manager:
           Value: true
         base_laser:
           Value: true
+        base_link:
+          Value: true
         base_uplayer_link:
           Value: true
         camera_link:
@@ -81,18 +86,6 @@ Visualization Manager:
           Value: true
         seat_link:
           Value: true
-        wheel1_link:
-          Value: true
-        wheel2_link:
-          Value: true
-        wheel3_caster_link:
-          Value: true
-        wheel3_link:
-          Value: true
-        wheel4_caster_link:
-          Value: true
-        wheel4_link:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -104,21 +97,11 @@ Visualization Manager:
             autonomous_wheelchair/chassis/lidar:
               {}
           base_uplayer_link:
+            base_link:
+              {}
             seat_link:
               back_link:
                 {}
-            wheel1_link:
-              {}
-            wheel2_link:
-              {}
-            wheel3_caster_link:
-              {}
-            wheel3_link:
-              {}
-            wheel4_caster_link:
-              {}
-            wheel4_link:
-              {}
           camera_stand_link:
             camera_link:
               autonomous_wheelchair/chassis/depth_camera:
@@ -180,8 +163,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 6.21123743057251
-        Min Value: -0.7700607776641846
+        Max Value: 6.263584613800049
+        Min Value: -0.7700275778770447
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -245,7 +228,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
-        Filter size: 100
+        Filter size: 1000
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /odom
@@ -353,7 +336,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: chassis
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -396,7 +379,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1.759777307510376
+      Distance: 5.254899024963379
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -411,10 +394,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.05979721248149872
+      Pitch: 0.234797403216362
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.0935966968536377
+      Yaw: 2.958596706390381
     Saved: ~
 Window Geometry:
   Displays:

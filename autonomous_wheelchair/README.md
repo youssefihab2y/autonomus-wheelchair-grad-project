@@ -1,8 +1,13 @@
 # Autonomous Wheelchair Project
 
-ROS 2 Humble + Gazebo Fortress project for autonomous wheelchair simulation with obstacle avoidance.
+ROS 2 Humble + Gazebo Fortress project for autonomous wheelchair simulation with obstacle avoidance and navigation capabilities.
 
-> ℹ️ **Latest update:** the Gazebo launch file now spawns the wheelchair at `z=0.15 m`, so the wheels always touch the ground immediately—no extra tweaking required before testing movement. The Gazebo diff-drive plugin now uses explicit `cmd_vel` / `odom` topics, so ROS commands and odometry always line up with Gazebo.
+> ℹ️ **Latest updates:**
+> - Lidar sensor mounted on back bar for optimal 360° scanning without self-detection
+> - Complete TF tree with odometry integration (`odom → base_link → chassis`)
+> - Nav2-ready configuration with automated readiness checker
+> - Caster wheel implementation for smooth front wheel rotation
+> - Optimized contact parameters for realistic wheelchair dynamics
 
 ## 📋 Requirements
 
@@ -89,8 +94,11 @@ autonomous_wheelchair/
 - ✅ **Gazebo simulation** - Warehouse environment with obstacles
 - ✅ **RViz visualization** - Real-time robot state visualization
 - ✅ **Keyboard teleoperation** - Control robot with keyboard
-- ✅ **Sensor integration** - LIDAR and depth camera support
-- ✅ **Odometry** - Real-time position and velocity tracking
+- ✅ **Sensor integration** - LIDAR (mounted on back bar) and depth camera support
+- ✅ **Odometry** - Real-time position and velocity tracking with proper TF transforms
+- ✅ **Caster wheels** - Front wheels with swivel mechanism for smooth turning
+- ✅ **Nav2 ready** - Complete TF tree and sensor configuration for navigation
+- ✅ **Self-filtering lidar** - Automatic filtering of robot's own body from scans
 
 ## 📦 Packages
 
@@ -127,6 +135,20 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 - `STOP_ALL.sh` – Terminates lingering Gazebo/ROS 2 processes before a fresh launch
 - `START_KEYBOARD_CONTROL.sh` – Sources the workspace and starts `teleop_twist_keyboard`
+- `check_nav2_readiness.sh` – Automated script to verify system is ready for Nav2 integration
+
+## 🧭 Navigation (Nav2) Support
+
+The system is configured and ready for Nav2 integration. Check readiness:
+
+```bash
+cd autonomous_wheelchair
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+./check_nav2_readiness.sh
+```
+
+See [NAV2_READINESS.md](./NAV2_READINESS.md) for detailed information and configuration.
 
 ## 🔧 Troubleshooting
 
@@ -137,6 +159,8 @@ See [QUICK_START.md](./QUICK_START.md) for detailed troubleshooting steps, inclu
 - Build directories (`build/`, `install/`, `log/`) are automatically generated and gitignored
 - Wait ~15-20 seconds after launch for Gazebo to fully initialize
 - Keyboard teleop must run in a separate terminal (requires interactive terminal)
+- Lidar is mounted on the back bar to avoid self-detection issues
+- Front wheels use caster mechanism for smooth rotation during turns
 
 ---
 

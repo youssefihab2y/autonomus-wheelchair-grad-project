@@ -13,6 +13,9 @@
   <depend>ros_gz_bridge</depend>
   <depend>wheelchair_description</depend>
   <depend>rclpy</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
   <depend>controller_manager_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>

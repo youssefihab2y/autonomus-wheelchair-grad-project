@@ -18,6 +18,14 @@ install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install Python scripts
+install(PROGRAMS
+  scripts/fix_odom_frames.py
+  scripts/odom_to_tf.py
+  scripts/filter_lidar_self.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()

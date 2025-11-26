@@ -105,7 +105,7 @@
       <right_joint>wheel1_joint</right_joint>    <!-- Back right wheel -->
       <wheel_separation>0.52</wheel_separation>  <!-- Lateral separation (m) -->
       <wheel_radius>0.15</wheel_radius>         <!-- Back wheel radius (m) -->
-      <odom_publish_frequency>5</odom_publish_frequency>  <!-- Reduced from 10 to 5 Hz for better performance -->
+      <odom_publish_frequency>10</odom_publish_frequency>  <!-- 10 Hz - balanced rate for RViz -->
       <odom_frame_id>odom</odom_frame_id>        <!-- Odometry frame (ROS standard) -->
       <robot_base_frame>base_uplayer_link</robot_base_frame>  <!-- Base frame where wheels are attached (not chassis) -->
       <!-- Fortress DiffDrive plugin supports explicit command/odom topic tags -->
@@ -264,6 +264,27 @@
             <!-- namespaced topic - easier for bridge mapping -->
             <topic>/wheelchair/scan</topic>
             <frame_id>base_laser</frame_id>
+            
+            <!-- Ignore robot's own links to prevent self-detection -->
+            <!-- Note: Lidar is mounted on back_link, so back_link is ignored to prevent seeing the mounting surface -->
+            <ignore>
+              <link>chassis</link>
+              <link>base_uplayer_link</link>
+              <link>base_link</link>
+              <link>seat_link</link>
+              <link>back_link</link>  <!-- Back bar where lidar is mounted -->
+              <link>base_laser</link>  <!-- Ignore lidar itself -->
+              <link>camera_stand_link</link>
+              <link>camera_link</link>
+              <link>kinect_optical</link>
+              <link>imu_sensor_link</link>
+              <link>wheel1_link</link>
+              <link>wheel2_link</link>
+              <link>wheel3_link</link>
+              <link>wheel4_link</link>
+              <link>wheel3_caster_link</link>
+              <link>wheel4_caster_link</link>
+            </ignore>
             
             <lidar>
               <scan>

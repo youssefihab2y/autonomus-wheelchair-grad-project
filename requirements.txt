@@ -12,7 +12,18 @@
 #     ros-humble-robot-state-publisher \
 #     ros-humble-joint-state-publisher \
 #     ros-humble-teleop-twist-keyboard \
-#     ros-humble-ros2controlcli
+#     ros-humble-rviz2 \
+#     ros-humble-tf2-ros \
+#     ros-humble-tf2-tools \
+#     ros-humble-nav-msgs \
+#     ros-humble-sensor-msgs \
+#     ros-humble-geometry-msgs \
+#     python3-colcon-common-extensions
+#
+# Optional: For Nav2 integration:
+#   sudo apt install -y \
+#     ros-humble-navigation2 \
+#     ros-humble-nav2-bringup
 #
 # Then, from the workspace root:
 #   pip install --upgrade pip
@@ -23,6 +34,10 @@
 # - rclpy (ROS 2 Python client library)
 # - launch (ROS 2 launch system)
 # - launch_ros (ROS 2 launch extensions)
+# - nav_msgs (Navigation messages)
+# - sensor_msgs (Sensor messages)
+# - geometry_msgs (Geometry messages)
+# - tf2_ros (TF2 ROS bindings)
 
 # Build and development tools
 setuptools>=65.0.0

@@ -423,12 +423,14 @@
   </link>
 
   <joint name="base_link_to_lidar" type="fixed">
-    <parent link="chassis"/>
+    <parent link="back_link"/>
     <child link="base_laser"/>
-    <!-- Position: camera_stand center is now at (-0.22, 0.0, 0.4525) -->
-    <!-- Camera is at top of stand: z = 0.4525 + 0.2175 (stand half-height) + 0.2375 (camera offset) = 0.9075 -->
-    <!-- Lidar should be near camera, adjusted position -->
-    <origin xyz="-0.205 0.0 0.9075" rpy="0.0 0.0 0.0"/>
+    <!-- Position: Lidar mounted on back bar at lower height -->
+    <!-- Back bar is a box: 0.04 x 0.41 x 0.41 (width x height x depth) -->
+    <!-- Back bar center is at z=0, extends from z=-0.205 to z=+0.205 -->
+    <!-- Place lidar at lower position: z = 0.0 (center height) for better obstacle detection -->
+    <!-- Position slightly forward (x positive) to clear the back bar surface -->
+    <origin xyz="0.02 0.0 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
 
   <!-- ==================== STRUCTURAL COMPONENTS (simplified) ==================== -->

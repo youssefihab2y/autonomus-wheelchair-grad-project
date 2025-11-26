@@ -55,6 +55,7 @@ def generate_launch_description():
     )
     
     # Joint State Publisher - publishes joint states from URDF for robot_state_publisher
+    # NOTE: If Gazebo joint states aren't available, this provides fallback joint states
     joint_state_publisher_node = Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
@@ -66,6 +67,7 @@ def generate_launch_description():
     )
     
     # Robot State Publisher - publishes TF transforms from URDF
+    # Uses joint states from either Gazebo (via bridge) or joint_state_publisher
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -83,7 +85,23 @@ def generate_launch_description():
         ]
     )
     
-    # Static TF transforms - bridge Gazebo's prefixed frame names to URDF frame names
+    # Static TF: Add base_link alias for ROS 2 conventions (base_link -> base_uplayer_link)
+    # Many ROS 2 tools expect base_link as the base frame
+    static_tf_base_link = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_tf_base_link',
+        arguments=[
+            '0', '0', '0',  # x, y, z (no offset)
+            '0', '0', '0',  # roll, pitch, yaw (no rotation)
+            'base_uplayer_link',  # parent frame
+            'base_link'  # child frame (alias)
+        ],
+        output='screen'
+    )
+    
+    # Static TF: Bridge Gazebo's prefixed sensor frame names to URDF frame names
+    # Gazebo Fortress automatically prefixes sensor frames with model name
     static_tf_lidar = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -91,21 +109,21 @@ def generate_launch_description():
         arguments=[
             '0', '0', '0',  # x, y, z (no offset - same frame)
             '0', '0', '0',  # roll, pitch, yaw (no rotation)
-            'base_laser',  # parent frame (from TF tree)
-            'autonomous_wheelchair/chassis/lidar'  # child frame (from Gazebo messages)
+            'base_laser',  # parent frame (URDF name)
+            'autonomous_wheelchair/chassis/lidar'  # child frame (Gazebo prefixed name)
         ],
         output='screen'
     )
     
-    static_tf_depth = Node(
+    static_tf_depth_camera = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        name='static_tf_depth',
+        name='static_tf_depth_camera',
         arguments=[
             '0', '0', '0',  # x, y, z (no offset - same frame)
             '0', '0', '0',  # roll, pitch, yaw (no rotation)
-            'camera_link',  # parent frame (from TF tree)
-            'autonomous_wheelchair/chassis/depth_camera'  # child frame (from Gazebo messages)
+            'camera_link',  # parent frame (URDF name)
+            'autonomous_wheelchair/chassis/depth_camera'  # child frame (Gazebo prefixed name)
         ],
         output='screen'
     )
@@ -154,12 +172,58 @@ def generate_launch_description():
                 remappings=[
                     ('model/wheelchair/joint_state', '/joint_states'),
                     ('cmd_vel', '/cmd_vel'),
-                    ('odom', '/odom'),
+                    ('odom', '/odom_raw'),  # Bridge to /odom_raw (with prefixed frames)
                     ('/wheelchair/scan', '/scan'),
                     ('/wheelchair/imu', '/imu_data'),
                     ('/wheelchair/camera/image_raw', '/camera/image'),
                     ('/wheelchair/camera/depth', '/camera/depth_image'),
                     ('/wheelchair/camera/depth/points', '/camera/points'),
+                ],
+                output='screen'
+            )
+        ]
+    )
+    
+    # Fix odometry frame names (remove Gazebo prefixes)
+    odom_frame_fixer_node = TimerAction(
+        period=7.0,
+        actions=[
+            Node(
+                package='wheelchair_gazebo',
+                executable='fix_odom_frames.py',
+                name='odom_frame_fixer',
+                remappings=[
+                    ('/odom', '/odom_raw'),  # Subscribe to raw odom with prefixed frames
+                    ('/odom_fixed', '/odom'),  # Publish fixed odom to standard /odom topic
+                ],
+                output='screen'
+            )
+        ]
+    )
+    
+    # Convert odometry to TF transform (prevents RViz queue overflow)
+    odom_to_tf_node = TimerAction(
+        period=8.0,
+        actions=[
+            Node(
+                package='wheelchair_gazebo',
+                executable='odom_to_tf.py',
+                name='odom_to_tf',
+                output='screen'
+            )
+        ]
+    )
+    
+    # Filter lidar scan to remove robot's own body (back bar, seat, etc.)
+    lidar_filter_node = TimerAction(
+        period=9.0,
+        actions=[
+            Node(
+                package='wheelchair_gazebo',
+                executable='filter_lidar_self.py',
+                name='lidar_self_filter',
+                remappings=[
+                    ('/scan_filtered', '/scan'),  # Publish filtered scan to /scan (replaces original)
                 ],
                 output='screen'
             )
@@ -192,11 +256,15 @@ def generate_launch_description():
         ),
         set_plugin_path,
         gz_sim,
-        joint_state_publisher_node,  # CRITICAL: Provides joint states for robot_state_publisher
-        robot_state_publisher_node,
-        static_tf_lidar,  # Bridge Gazebo's prefixed frame name to TF tree frame
-        static_tf_depth,  # Bridge Gazebo's prefixed frame name to TF tree frame
+        joint_state_publisher_node,  # Provides joint states for robot_state_publisher
+        robot_state_publisher_node,  # Publishes TF from URDF using joint_states
+        static_tf_base_link,  # Add base_link alias for ROS 2 conventions
+        static_tf_lidar,  # Bridge Gazebo's prefixed lidar frame to URDF frame
+        static_tf_depth_camera,  # Bridge Gazebo's prefixed depth camera frame to URDF frame
         spawn_entity_node,
         bridge_node,
+        odom_frame_fixer_node,  # Fix odometry frame names (remove Gazebo prefixes)
+        odom_to_tf_node,  # Convert odometry to TF (prevents RViz queue overflow)
+        lidar_filter_node,  # Filter lidar to remove robot's own body (back bar, seat, etc.)
     ])
 
