@@ -32,6 +32,24 @@
   <xacro:property name="wheel_radius_front" value="0.095"/>     <!-- Front wheel radius (m) -->
   <xacro:property name="wheel_width_front" value="0.03"/>      <!-- Front wheel width (m) -->
   <xacro:property name="wheel_mass" value="0.5"/>                <!-- Wheel mass (kg) -->
+  <!--
+    Front wheel mount drop (distance from base_uplayer_link origin down to front wheel center).
+    We pick this so that both front and back wheels touch the ground with the SAME spawn z.
+
+    Back wheel bottom z:
+      z_bottom_back = z_spawn + base_height_offset - 2 * wheel_radius_back
+    For wheels to touch ground: z_bottom_back = 0  =>  z_spawn = 2*R_back - base_height_offset
+      With R_back = 0.15, base_height_offset = 0.21:  z_spawn = 0.30 - 0.21 = 0.09 m
+
+    For the front wheel (radius R_front) at the same z_spawn, we want:
+      z_bottom_front = z_spawn + base_height_offset - wheel_front_mount_height - R_front = 0
+      => wheel_front_mount_height = z_spawn + base_height_offset - R_front
+      = 0.09 + 0.21 - 0.095 = 0.205 m
+
+    So the front wheel center hangs 0.205 m below the base origin, and the wheel radius
+    is 0.095 m, giving an 11 cm “metal fork” / spacer which visually raises the chair front.
+  -->
+  <xacro:property name="wheel_front_mount_height" value="0.205"/>
   
   <!-- Wheel separation distances (relative to base_uplayer_link) -->
   <xacro:property name="wheel_separation_longitudinal" value="0.5"/>   <!-- Distance between front and back wheels (m) -->
@@ -172,8 +190,34 @@
     </joint>
   </xacro:macro>
 
-  <!-- Wheel macro for front wheels -->
+  <!-- Wheel macro for front wheels (modeled as casters: yaw joint + wheel roll joint) -->
   <xacro:macro name="wheel_front" params="name x y">
+    <!-- Caster mount link (small metal fork under the base) -->
+    <link name="${name}_caster_link">
+      <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="0.2"/>
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      </inertial>
+      <visual name="${name}_caster_visual">
+        <!-- Simple vertical bar representing the metal support -->
+        <origin xyz="0.0 0.0 -${wheel_front_mount_height * 0.5}" rpy="0.0 0.0 0.0"/>
+        <geometry>
+          <box size="0.02 0.02 ${wheel_front_mount_height}"/>
+        </geometry>
+        <material name="gray">
+          <color rgba="0.5 0.5 0.5 1.0"/>
+        </material>
+      </visual>
+      <collision name="${name}_caster_collision">
+        <origin xyz="0.0 0.0 -${wheel_front_mount_height * 0.5}" rpy="0.0 0.0 0.0"/>
+        <geometry>
+          <box size="0.02 0.02 ${wheel_front_mount_height}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Wheel link (same as before, attached to caster link instead of base) -->
     <link name="${name}_link">
       <inertial>
         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
@@ -201,13 +245,25 @@
       </collision>
     </link>
 
-    <joint name="${name}_joint" type="continuous">
-      <!-- Wheel center should be at negative wheel radius below base_uplayer_link center -->
-      <!-- Front wheels have smaller radius, so less negative z -->
-      <origin xyz="${x} ${y} -${wheel_radius_front}" rpy="0.0 0.0 0.0"/>
+    <!-- Caster yaw joint: base -> caster link (rotation about Z) -->
+    <joint name="${name}_caster_yaw_joint" type="continuous">
+      <origin xyz="${x} ${y} 0.0" rpy="0.0 0.0 0.0"/>
       <parent link="base_uplayer_link"/>
+      <child link="${name}_caster_link"/>
+      <axis xyz="0.0 0.0 1.0"/>
+      <dynamics damping="0.1" friction="0.0"/>
+      <limit effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <!-- Wheel roll joint: caster link -> wheel (rotation about Y) -->
+    <joint name="${name}_joint" type="continuous">
+      <!-- Place the wheel center below the caster mount by wheel_front_mount_height -->
+      <origin xyz="0.0 0.0 -${wheel_front_mount_height}" rpy="0.0 0.0 0.0"/>
+      <parent link="${name}_caster_link"/>
       <child link="${name}_link"/>
       <axis xyz="0.0 1.0 0.0"/>
+      <dynamics damping="0.0" friction="0.0"/>
+      <limit effort="50.0" velocity="50.0"/>
     </joint>
   </xacro:macro>
 

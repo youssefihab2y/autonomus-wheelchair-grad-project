@@ -100,7 +100,7 @@
   -->
   <gazebo>
     <plugin filename="libignition-gazebo6-diff-drive-system.so"
-            name="ignition::gazebo::systems::DiffDrive">
+            name="gz::sim::systems::DiffDrive">
       <left_joint>wheel2_joint</left_joint>      <!-- Back left wheel -->
       <right_joint>wheel1_joint</right_joint>    <!-- Back right wheel -->
       <wheel_separation>0.52</wheel_separation>  <!-- Lateral separation (m) -->

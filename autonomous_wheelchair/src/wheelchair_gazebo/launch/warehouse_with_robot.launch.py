@@ -25,7 +25,11 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     x_pose = LaunchConfiguration('x_pose', default='0.0')
     y_pose = LaunchConfiguration('y_pose', default='0.0')
-    z_pose = LaunchConfiguration('z_pose', default='0.15')
+    # Spawn height chosen so that, with the current URDF geometry, all wheels
+    # just touch the ground at t=0 (no initial “drop” or penetration).
+    # See wheel_height calculations in wheelchair.urdf.xacro:
+    #   z_spawn = 2*wheel_radius_back - base_height_offset = 0.09 m
+    z_pose = LaunchConfiguration('z_pose', default='0.09')
     
     # URDF file path - using original wheelchair model
     urdf_file = PathJoinSubstitution([
@@ -182,9 +186,9 @@ def generate_launch_description():
             description='Initial y position of the robot'
         ),
         DeclareLaunchArgument(
-            'z_pose',
-            default_value='0.15',
-            description='Initial z position of the robot (wheels touch ground)'
+        'z_pose',
+        default_value='0.09',
+        description='Initial z position of the robot (wheels touch ground)'
         ),
         set_plugin_path,
         gz_sim,
