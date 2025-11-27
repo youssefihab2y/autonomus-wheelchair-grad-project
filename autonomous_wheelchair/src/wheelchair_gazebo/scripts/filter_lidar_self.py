@@ -17,7 +17,7 @@ class LidarSelfFilter(Node):
         # Subscribe to raw lidar scan (from Gazebo bridge)
         self.subscription = self.create_subscription(
             LaserScan,
-            '/scan',  # Subscribe to bridged scan topic
+            '/scan_raw',  # Subscribe to raw bridged scan topic (with Gazebo frame names)
             self.scan_callback,
             10
         )
@@ -43,15 +43,27 @@ class LidarSelfFilter(Node):
         self.filter_range_max = 0.6  # Maximum range to filter within this angle (m)
         
         self.get_logger().info('Lidar self-filter started')
+        self.get_logger().info('Subscribing to: /scan_raw (Gazebo scan with prefixed frames)')
+        self.get_logger().info('Publishing to: /scan (filtered scan with base_laser frame_id)')
         self.get_logger().info(f'Filtering angles: {math.degrees(self.filter_angle_start):.1f}° to {math.degrees(self.filter_angle_end):.1f}°')
         self.get_logger().info(f'Filtering range: 0.0 to {self.filter_range_max:.2f}m')
-        self.get_logger().info('Publishing filtered scan to /scan_filtered')
     
     def scan_callback(self, msg):
         # Create filtered scan
         filtered_msg = LaserScan()
         filtered_msg.header = msg.header
-        filtered_msg.header.frame_id = msg.header.frame_id
+        # Fix frame_id: convert Gazebo prefixed frame to URDF frame name
+        # Gazebo uses: autonomous_wheelchair/chassis/lidar
+        # URDF uses: base_laser
+        if msg.header.frame_id.startswith('autonomous_wheelchair/'):
+            # Extract the sensor name and map to URDF frame
+            if 'lidar' in msg.header.frame_id.lower():
+                filtered_msg.header.frame_id = 'base_laser'
+            else:
+                # Keep original if not recognized
+                filtered_msg.header.frame_id = msg.header.frame_id
+        else:
+            filtered_msg.header.frame_id = msg.header.frame_id
         filtered_msg.angle_min = msg.angle_min
         filtered_msg.angle_max = msg.angle_max
         filtered_msg.angle_increment = msg.angle_increment

@@ -164,6 +164,7 @@ def generate_launch_description():
                     'cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
                     'odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
                     '/wheelchair/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+                    '/scan_raw@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
                     '/wheelchair/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
                     '/wheelchair/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
                     '/wheelchair/camera/depth@sensor_msgs/msg/Image[gz.msgs.Image',
@@ -173,7 +174,7 @@ def generate_launch_description():
                     ('model/wheelchair/joint_state', '/joint_states'),
                     ('cmd_vel', '/cmd_vel'),
                     ('odom', '/odom_raw'),  # Bridge to /odom_raw (with prefixed frames)
-                    ('/wheelchair/scan', '/scan'),
+                    ('/wheelchair/scan', '/scan_raw'),  # Bridge to /scan_raw (with Gazebo frame names)
                     ('/wheelchair/imu', '/imu_data'),
                     ('/wheelchair/camera/image_raw', '/camera/image'),
                     ('/wheelchair/camera/depth', '/camera/depth_image'),
@@ -223,6 +224,7 @@ def generate_launch_description():
                 executable='filter_lidar_self.py',
                 name='lidar_self_filter',
                 remappings=[
+                    ('/scan', '/scan_raw'),  # Subscribe to raw scan from bridge
                     ('/scan_filtered', '/scan'),  # Publish filtered scan to /scan (replaces original)
                 ],
                 output='screen'

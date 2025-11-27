@@ -18,6 +18,11 @@ install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install config files
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # Install Python scripts
 install(PROGRAMS
   scripts/fix_odom_frames.py
