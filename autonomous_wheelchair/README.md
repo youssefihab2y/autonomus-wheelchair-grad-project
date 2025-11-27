@@ -3,11 +3,12 @@
 ROS 2 Humble + Gazebo Fortress project for autonomous wheelchair simulation with obstacle avoidance and navigation capabilities.
 
 > ℹ️ **Latest updates:**
-> - Lidar sensor mounted on back bar for optimal 360° scanning without self-detection
-> - Complete TF tree with odometry integration (`odom → base_link → chassis`)
-> - Nav2-ready configuration with automated readiness checker
-> - Caster wheel implementation for smooth front wheel rotation
-> - Optimized contact parameters for realistic wheelchair dynamics
+> - **SLAM Integration** - Full SLAM toolbox support for map creation
+> - **Nav2 Integration** - Complete navigation stack with wheelchair-specific parameters
+> - **Lidar on back bar** - Mounted for optimal 360° scanning without self-detection
+> - **Optimized turning** - Low-friction front wheels with caster mechanism for smooth rotation
+> - **Complete TF tree** - Proper odometry integration (`odom → base_link → chassis`)
+> - **Frame ID fixes** - Automatic conversion of Gazebo prefixed frames to URDF frames
 
 ## 📋 Requirements
 
@@ -18,6 +19,7 @@ ROS 2 Humble + Gazebo Fortress project for autonomous wheelchair simulation with
 
 ### Required ROS 2 Packages
 ```bash
+sudo apt update
 sudo apt install -y \
   ros-humble-desktop \
   ros-humble-ros-gz-sim \
@@ -26,7 +28,25 @@ sudo apt install -y \
   ros-humble-joint-state-publisher \
   ros-humble-teleop-twist-keyboard \
   ros-humble-rviz2 \
+  ros-humble-tf2-ros \
+  ros-humble-tf2-tools \
+  ros-humble-nav-msgs \
+  ros-humble-sensor-msgs \
+  ros-humble-geometry-msgs \
   python3-colcon-common-extensions
+```
+
+### Optional: Navigation and SLAM Packages
+```bash
+# For Nav2 navigation
+sudo apt install -y \
+  ros-humble-navigation2 \
+  ros-humble-nav2-bringup
+
+# For SLAM mapping
+sudo apt install -y \
+  ros-humble-slam-toolbox \
+  ros-humble-nav2-map-server
 ```
 
 ## 🚀 Quick Start
@@ -43,9 +63,21 @@ sudo apt install -y \
    source install/setup.bash
    ```
 
-3. **Launch simulation:**
+3. **Launch simulation (choose one):**
+   
+   **Basic simulation:**
    ```bash
    ros2 launch wheelchair_gazebo warehouse_with_robot.launch.py
+   ```
+   
+   **With SLAM mapping:**
+   ```bash
+   ros2 launch wheelchair_gazebo warehouse_with_slam_rviz.launch.py
+   ```
+   
+   **With Nav2 navigation:**
+   ```bash
+   ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py
    ```
 
 4. **(Optional) Clear stale processes before relaunching:**
@@ -81,12 +113,23 @@ autonomous_wheelchair/
 │   │   ├── config/                 # Controller configurations
 │   │   └── rviz/                   # RViz configuration files
 │   └── wheelchair_gazebo/         # Gazebo simulation
-│       ├── launch/                 # Launch files for simulation
-│       └── worlds/                  # Gazebo world files
+│       ├── launch/                 # Launch files (simulation, SLAM, Nav2)
+│       ├── config/                 # Configuration files (Nav2, SLAM)
+│       ├── scripts/                # Python scripts (TF, odometry, filtering)
+│       └── worlds/                 # Gazebo world files
 ├── build/                          # Build files (generated, gitignored)
 ├── install/                        # Install files (generated, gitignored)
-└── log/                            # Log files (generated, gitignored)
-   ```
+├── log/                            # Log files (generated, gitignored)
+├── maps/                           # User-generated maps (gitignored)
+└── Documentation files:
+    ├── README.md                   # This file
+    ├── QUICK_START.md              # Quick start guide
+    ├── NAV2_READINESS.md           # Nav2 setup checklist
+    ├── NAV2_SETUP_GUIDE.md         # Nav2 integration guide
+    ├── SLAM_GUIDE.md               # SLAM mapping guide
+    ├── DRIVING_GUIDE.md            # Driving instructions
+    └── SPEED_SETTINGS.md           # Speed reference guide
+```
 
 ## ✨ Features
 
@@ -96,9 +139,11 @@ autonomous_wheelchair/
 - ✅ **Keyboard teleoperation** - Control robot with keyboard
 - ✅ **Sensor integration** - LIDAR (mounted on back bar) and depth camera support
 - ✅ **Odometry** - Real-time position and velocity tracking with proper TF transforms
-- ✅ **Caster wheels** - Front wheels with swivel mechanism for smooth turning
-- ✅ **Nav2 ready** - Complete TF tree and sensor configuration for navigation
+- ✅ **Caster wheels** - Front wheels with optimized friction for smooth turning
+- ✅ **SLAM mapping** - Create maps of the environment using SLAM toolbox
+- ✅ **Nav2 navigation** - Complete navigation stack with wheelchair-specific parameters
 - ✅ **Self-filtering lidar** - Automatic filtering of robot's own body from scans
+- ✅ **Frame ID conversion** - Automatic conversion of Gazebo frames to URDF frames
 
 ## 📦 Packages
 
@@ -107,9 +152,11 @@ autonomous_wheelchair/
 
 ## 🎮 Usage
 
-### Launch Simulation and Visualization
+### Launch Options
+
+**1. Basic Simulation:**
 ```bash
-# Terminal 1: Launch Gazebo
+# Terminal 1: Launch Gazebo + Robot
 ros2 launch wheelchair_gazebo warehouse_with_robot.launch.py
 
 # Terminal 2: Launch RViz (optional)
@@ -118,6 +165,29 @@ ros2 launch wheelchair_description view_robot_rviz2.launch.py
 # Terminal 3: Keyboard control
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
+
+**2. SLAM Mapping (Recommended for first-time setup):**
+```bash
+# Single command launches everything (Gazebo + Robot + SLAM + RViz)
+ros2 launch wheelchair_gazebo warehouse_with_slam_rviz.launch.py
+
+# Then in new terminal: Drive to create map
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+
+# Save map when done:
+ros2 run nav2_map_server map_saver_cli -f ~/wheelchair_warehouse_map
+```
+
+**3. Nav2 Navigation:**
+```bash
+# Launch Gazebo + Robot + Nav2
+ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py map:=~/wheelchair_warehouse_map.yaml
+
+# Or launch Nav2 separately:
+ros2 launch wheelchair_gazebo nav2_bringup.launch.py map:=~/wheelchair_warehouse_map.yaml
+```
+
+See [SLAM_GUIDE.md](./SLAM_GUIDE.md) and [NAV2_SETUP_GUIDE.md](./NAV2_SETUP_GUIDE.md) for detailed instructions.
 
 ### Keyboard Controls
 - **i**: Move forward
@@ -137,18 +207,41 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 - `START_KEYBOARD_CONTROL.sh` – Sources the workspace and starts `teleop_twist_keyboard`
 - `check_nav2_readiness.sh` – Automated script to verify system is ready for Nav2 integration
 
-## 🧭 Navigation (Nav2) Support
+## 📚 Documentation
 
-The system is configured and ready for Nav2 integration. Check readiness:
+- **[QUICK_START.md](./QUICK_START.md)** - Quick start guide and troubleshooting
+- **[NAV2_READINESS.md](./NAV2_READINESS.md)** - Nav2 readiness checklist
+- **[NAV2_SETUP_GUIDE.md](./NAV2_SETUP_GUIDE.md)** - Step-by-step Nav2 integration guide
+- **[SLAM_GUIDE.md](./SLAM_GUIDE.md)** - SLAM mapping instructions
+- **[DRIVING_GUIDE.md](./DRIVING_GUIDE.md)** - Driving techniques for mapping
+- **[SPEED_SETTINGS.md](./SPEED_SETTINGS.md)** - Speed parameter reference
 
+## 🧭 Navigation & Mapping
+
+### SLAM Mapping
+Create maps of your environment using SLAM toolbox:
 ```bash
-cd autonomous_wheelchair
-source /opt/ros/humble/setup.bash
-source install/setup.bash
-./check_nav2_readiness.sh
+# Launch with SLAM
+ros2 launch wheelchair_gazebo warehouse_with_slam_rviz.launch.py
+
+# Drive around to map the environment
+# Save map when complete:
+ros2 run nav2_map_server map_saver_cli -f ~/wheelchair_warehouse_map
 ```
 
-See [NAV2_READINESS.md](./NAV2_READINESS.md) for detailed information and configuration.
+See [SLAM_GUIDE.md](./SLAM_GUIDE.md) for detailed mapping instructions.
+
+### Nav2 Navigation
+Navigate autonomously using saved maps:
+```bash
+# Check system readiness
+./check_nav2_readiness.sh
+
+# Launch with Nav2
+ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py map:=~/wheelchair_warehouse_map.yaml
+```
+
+See [NAV2_SETUP_GUIDE.md](./NAV2_SETUP_GUIDE.md) for complete Nav2 setup guide.
 
 ## 🔧 Troubleshooting
 
@@ -159,8 +252,11 @@ See [QUICK_START.md](./QUICK_START.md) for detailed troubleshooting steps, inclu
 - Build directories (`build/`, `install/`, `log/`) are automatically generated and gitignored
 - Wait ~15-20 seconds after launch for Gazebo to fully initialize
 - Keyboard teleop must run in a separate terminal (requires interactive terminal)
-- Lidar is mounted on the back bar to avoid self-detection issues
-- Front wheels use caster mechanism for smooth rotation during turns
+- **Lidar** is mounted on the back bar to avoid self-detection issues
+- **Front wheels** use optimized caster mechanism with low friction for smooth turning
+- **Recommended speeds** for SLAM: Forward 0.3-0.5 m/s, Yaw 0.3-0.5 rad/s
+- **Camera** starts positioned behind the wheelchair for better view
+- User-generated maps are stored in `maps/` directory (gitignored)
 
 ---
 

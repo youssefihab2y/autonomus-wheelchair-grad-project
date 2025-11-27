@@ -83,5 +83,10 @@ frames_*.gv
 *_SCAN_*.md
 *_SETUP.md
 INSTALLATION_GUIDE.md
+# Generated TF tree files
 frames_*.pdf
 frames_*.gv
+
+# Maps directory (user-generated maps)
+autonomous_wheelchair/maps/*.pgm
+autonomous_wheelchair/maps/*.yaml

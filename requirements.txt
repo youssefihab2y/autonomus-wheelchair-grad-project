@@ -23,7 +23,13 @@
 # Optional: For Nav2 integration:
 #   sudo apt install -y \
 #     ros-humble-navigation2 \
-#     ros-humble-nav2-bringup
+#     ros-humble-nav2-bringup \
+#     ros-humble-nav2-map-server
+
+# Optional: For SLAM mapping:
+#   sudo apt install -y \
+#     ros-humble-slam-toolbox \
+#     ros-humble-nav2-map-server
 #
 # Then, from the workspace root:
 #   pip install --upgrade pip

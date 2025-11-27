@@ -29,7 +29,10 @@
         <scene>scene</scene>
         <ambient_light>0.4 0.4 0.4</ambient_light>
         <background_color>0.8 0.8 0.8</background_color>
-        <camera_pose>13.4 -6.1 2.23 0 0.4 -1.83</camera_pose>
+        <!-- Camera positioned behind and above the wheelchair, looking at it -->
+        <!-- Position: x=1.5m behind, y=0m (centered), z=1.2m above ground -->
+        <!-- Orientation: pitch down 0.3 rad to look at chair, yaw 0 (looking forward) -->
+        <camera_pose>1.5 0.0 1.2 0 0.3 0</camera_pose>
       </plugin>
 
       <!-- World control -->
