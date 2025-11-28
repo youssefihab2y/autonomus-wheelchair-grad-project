@@ -156,8 +156,9 @@ autonomous_wheelchair/
 
 **1. Basic Simulation:**
 ```bash
-# Terminal 1: Launch Gazebo + Robot
+# Terminal 1: Launch Gazebo + Robot 
 ros2 launch wheelchair_gazebo warehouse_with_robot.launch.py
+
 
 # Terminal 2: Launch RViz (optional)
 ros2 launch wheelchair_description view_robot_rviz2.launch.py
@@ -168,8 +169,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 **2. SLAM Mapping (Recommended for first-time setup):**
 ```bash
-# Single command launches everything (Gazebo + Robot + SLAM + RViz)
-ros2 launch wheelchair_gazebo warehouse_with_slam_rviz.launch.py
+# Single command launches everything (Gazebo + Robot + SLAM + RViz +amcl)
+# NEW WAY (one command)
+ros2 launch wheelchair_gazebo warehouse_with_amcl_rviz.launch.py
 
 # Then in new terminal: Drive to create map
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
@@ -180,7 +182,7 @@ ros2 run nav2_map_server map_saver_cli -f ~/wheelchair_warehouse_map
 
 **3. Nav2 Navigation:**
 ```bash
-# Launch Gazebo + Robot + Nav2
+# Launch Gazebo + Robot + Nav2 
 ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py map:=~/wheelchair_warehouse_map.yaml
 
 # Or launch Nav2 separately:
