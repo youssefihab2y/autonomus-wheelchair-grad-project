@@ -24,14 +24,12 @@ def generate_launch_description():
     map_file = LaunchConfiguration('map_file')
     scan_topic = LaunchConfiguration('scan_topic', default='/scan')
     
-    # Default map path
-    pkg_share = os.path.join(os.path.expanduser('~'), 
-                             'autonomus-wheelchair-grad-project',
-                             'autonomous_wheelchair',
-                             'src',
-                             'wheelchair_gazebo',
-                             'maps',
-                             'mymap.yaml')
+    # Default map path - use FindPackageShare to get correct path
+    pkg_share = PathJoinSubstitution([
+        pkg_wheelchair_gazebo,
+        'maps',
+        'mymap.yaml'
+    ])
     
     # Launch arguments
     map_file_arg = DeclareLaunchArgument(
@@ -61,6 +59,7 @@ def generate_launch_description():
     )
     
     # Map Server Node (delayed to ensure robot is spawned)
+    # Note: map_server needs absolute path to YAML file, and YAML must have absolute path to PGM
     map_server_node = TimerAction(
         period=10.0,
         actions=[
@@ -117,6 +116,9 @@ def generate_launch_description():
     )
     
     # Launch RViz (delayed to ensure everything is running)
+    # Note: nav2_default_view.rviz should include Map display, but if map doesn't appear:
+    # 1. In RViz, set Fixed Frame to 'map'
+    # 2. Add Map display manually: Topic: /map, Durability: Transient Local
     rviz_launch = TimerAction(
         period=15.0,  # Wait 15 seconds for everything to initialize
         actions=[

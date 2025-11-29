@@ -129,7 +129,7 @@ autonomous_wheelchair/
     ├── SLAM_GUIDE.md               # SLAM mapping guide
     ├── DRIVING_GUIDE.md            # Driving instructions
     └── SPEED_SETTINGS.md           # Speed reference guide
-```
+   ```
 
 ## ✨ Features
 

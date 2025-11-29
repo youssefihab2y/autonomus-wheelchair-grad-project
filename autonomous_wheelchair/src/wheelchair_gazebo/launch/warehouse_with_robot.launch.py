@@ -129,6 +129,7 @@ def generate_launch_description():
     )
     
     # Spawn robot in Gazebo (delayed to ensure world is loaded)
+    # Note: If duplicates appear, ensure Gazebo is fully closed (pkill -9 -f "gz") before relaunching
     spawn_entity_node = TimerAction(
         period=5.0,
         actions=[
@@ -143,7 +144,7 @@ def generate_launch_description():
                     '-x', x_pose,
                     '-y', y_pose,
                     '-z', z_pose,
-                    '-allow_renaming', 'false'
+                    '-allow_renaming', 'false'  # Will fail if entity exists - ensures no duplicates
                 ],
                 output='screen'
             )
