@@ -70,14 +70,22 @@ sudo apt install -y \
    ros2 launch wheelchair_gazebo warehouse_with_robot.launch.py
    ```
    
-   **With SLAM mapping:**
+   **With SLAM mapping (build a new map):**
    ```bash
    ros2 launch wheelchair_gazebo warehouse_with_slam_rviz.launch.py
    ```
    
-   **With Nav2 navigation:**
+   **With localization using a saved map (AMCL only):**
    ```bash
-   ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py
+   # Example using the example map committed in this repo
+   ros2 launch wheelchair_gazebo warehouse_with_amcl_rviz.launch.py \
+     map_file:=$(pwd)/src/wheelchair_gazebo/maps/mymap.yaml
+   ```
+   
+   **With Nav2 navigation (full navigation stack):**
+   ```bash
+   ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
+     map:=~/wheelchair_warehouse_map.yaml
    ```
 
 4. **(Optional) Clear stale processes before relaunching:**
@@ -113,14 +121,15 @@ autonomous_wheelchair/
 │   │   ├── config/                 # Controller configurations
 │   │   └── rviz/                   # RViz configuration files
 │   └── wheelchair_gazebo/         # Gazebo simulation
-│       ├── launch/                 # Launch files (simulation, SLAM, Nav2)
+│       ├── launch/                 # Launch files (simulation, SLAM, Nav2, AMCL)
 │       ├── config/                 # Configuration files (Nav2, SLAM)
-│       ├── scripts/                # Python scripts (TF, odometry, filtering)
+│       ├── maps/                   # Example maps shipped with the project (e.g. mymap.{pgm,yaml})
+│       ├── scripts/                # Python nodes (TF, odometry, lidar filtering)
 │       └── worlds/                 # Gazebo world files
 ├── build/                          # Build files (generated, gitignored)
 ├── install/                        # Install files (generated, gitignored)
 ├── log/                            # Log files (generated, gitignored)
-├── maps/                           # User-generated maps (gitignored)
+├── maps/                           # User-generated maps you save (gitignored)
 └── Documentation files:
     ├── README.md                   # This file
     ├── QUICK_START.md              # Quick start guide
@@ -169,24 +178,25 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 **2. SLAM Mapping (Recommended for first-time setup):**
 ```bash
-# Single command launches everything (Gazebo + Robot + SLAM + RViz +amcl)
-# NEW WAY (one command)
-ros2 launch wheelchair_gazebo warehouse_with_amcl_rviz.launch.py
+# Single command launches everything (Gazebo + Robot + SLAM + RViz)
+ros2 launch wheelchair_gazebo warehouse_with_slam_rviz.launch.py
 
 # Then in new terminal: Drive to create map
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
-# Save map when done:
+# Save map when done (for example into your home directory):
 ros2 run nav2_map_server map_saver_cli -f ~/wheelchair_warehouse_map
 ```
 
-**3. Nav2 Navigation:**
+**3. Nav2 Navigation (using a saved map):**
 ```bash
 # Launch Gazebo + Robot + Nav2 
-ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py map:=~/wheelchair_warehouse_map.yaml
+ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
+  map:=~/wheelchair_warehouse_map.yaml
 
-# Or launch Nav2 separately:
-ros2 launch wheelchair_gazebo nav2_bringup.launch.py map:=~/wheelchair_warehouse_map.yaml
+# Or launch Nav2 separately (if Gazebo + Robot are already running):
+ros2 launch wheelchair_gazebo nav2_bringup.launch.py \
+  map:=~/wheelchair_warehouse_map.yaml
 ```
 
 See [SLAM_GUIDE.md](./SLAM_GUIDE.md) and [NAV2_SETUP_GUIDE.md](./NAV2_SETUP_GUIDE.md) for detailed instructions.

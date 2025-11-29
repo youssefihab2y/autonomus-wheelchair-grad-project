@@ -253,9 +253,9 @@ def generate_launch_description():
             description='Initial y position of the robot'
         ),
         DeclareLaunchArgument(
-        'z_pose',
+            'z_pose',
         default_value='0.09',
-        description='Initial z position of the robot (wheels touch ground)'
+            description='Initial z position of the robot (wheels touch ground)'
         ),
         set_plugin_path,
         gz_sim,
