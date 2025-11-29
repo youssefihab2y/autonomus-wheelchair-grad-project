@@ -27,7 +27,7 @@ def generate_launch_description():
     # Default map path - use FindPackageShare to get correct path
     pkg_share = PathJoinSubstitution([
         pkg_wheelchair_gazebo,
-        'maps',
+                             'maps',
         'mymap.yaml'
     ])
     

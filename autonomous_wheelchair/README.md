@@ -82,10 +82,26 @@ sudo apt install -y \
      map_file:=$(pwd)/src/wheelchair_gazebo/maps/mymap.yaml
    ```
    
-   **With Nav2 navigation (full navigation stack):**
+   **With Nav2 navigation (full navigation stack + Gazebo + RViz):**
    ```bash
+   # Single command launches everything: Gazebo + Robot + Nav2 + RViz
+   # RViz opens automatically after ~15 seconds
+   ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
+     map:=$(pwd)/src/wheelchair_gazebo/maps/mymap.yaml
+   
+   # Or use your own saved map:
    ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
      map:=~/wheelchair_warehouse_map.yaml
+   ```
+   
+   **What opens automatically:**
+   - **Gazebo** - Simulation window (appears first, ~5 seconds)
+   - **RViz** - Visualization window (appears after ~15 seconds with Nav2 default view)
+   - **Nav2 nodes** - All navigation components start automatically
+   
+   **Note:** If RViz doesn't appear, you can launch it manually:
+   ```bash
+   ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/rviz/nav2_default_view.rviz
    ```
 
 4. **(Optional) Clear stale processes before relaunching:**
@@ -190,11 +206,17 @@ ros2 run nav2_map_server map_saver_cli -f ~/wheelchair_warehouse_map
 
 **3. Nav2 Navigation (using a saved map):**
 ```bash
-# Launch Gazebo + Robot + Nav2 
+# Single command: Launch Gazebo + Robot + Nav2 + RViz (all-in-one)
+# RViz opens automatically after ~15 seconds
+ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
+  map:=$(pwd)/src/wheelchair_gazebo/maps/mymap.yaml
+
+# Or use your own saved map:
 ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
   map:=~/wheelchair_warehouse_map.yaml
 
 # Or launch Nav2 separately (if Gazebo + Robot are already running):
+# Note: This does NOT include RViz - launch it manually if needed
 ros2 launch wheelchair_gazebo nav2_bringup.launch.py \
   map:=~/wheelchair_warehouse_map.yaml
 ```
@@ -249,8 +271,27 @@ Navigate autonomously using saved maps:
 # Check system readiness
 ./check_nav2_readiness.sh
 
-# Launch with Nav2
-ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py map:=~/wheelchair_warehouse_map.yaml
+# Launch with Nav2 (includes Gazebo + Robot + Nav2 + RViz)
+# RViz opens automatically after ~15 seconds
+ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
+  map:=$(pwd)/src/wheelchair_gazebo/maps/mymap.yaml
+```
+
+**What to expect:**
+- **Gazebo window** opens first (~5 seconds) - shows the robot in the warehouse
+- **RViz window** opens automatically (~15 seconds) - pre-configured with Nav2 default view
+- **Nav2 nodes** start automatically - ready for navigation
+
+**After launching:**
+1. **Wait for RViz to open** (should appear automatically after ~15 seconds)
+2. **Set initial pose in RViz**: Use the "2D Pose Estimate" tool (top toolbar) to set the robot's starting position on the map
+3. **Send navigation goal**: Use the "2D Nav Goal" tool (top toolbar) to command the robot to navigate to a location
+4. **Monitor in RViz**: Watch the global/local costmaps, planned path, and robot movement
+
+**If RViz doesn't open automatically:**
+```bash
+# Launch RViz manually with Nav2 configuration
+ros2 run rviz2 rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/rviz/nav2_default_view.rviz
 ```
 
 See [NAV2_SETUP_GUIDE.md](./NAV2_SETUP_GUIDE.md) for complete Nav2 setup guide.
@@ -258,6 +299,126 @@ See [NAV2_SETUP_GUIDE.md](./NAV2_SETUP_GUIDE.md) for complete Nav2 setup guide.
 ## 🔧 Troubleshooting
 
 See [QUICK_START.md](./QUICK_START.md) for detailed troubleshooting steps, including RViz/Gazebo debugging tips.
+
+## 🔧 Nav2 Parameter Customization Guide
+
+> **For Nav2 developers/partners**: This section explains how to modify Nav2 parameters for enhancements and tuning.
+
+### Configuration File Location
+All Nav2 parameters are stored in:
+```
+src/wheelchair_gazebo/config/nav2_params.yaml
+```
+
+### Key Parameter Sections
+
+#### 1. **AMCL (Localization) Parameters**
+Located under `amcl:` section:
+- `min_particles: 500` / `max_particles: 2000` - Particle filter size (more = more accurate but slower)
+- `laser_model_type: "likelihood_field"` - Laser scan matching model
+- `update_min_d: 0.25` - Minimum distance (m) before updating localization
+- `update_min_a: 0.2` - Minimum angle (rad) before updating localization
+
+**To improve localization accuracy:**
+- Increase `max_particles` (e.g., 3000-5000) for better accuracy in complex environments
+- Adjust `alpha1-alpha5` (0.2 default) for odometry noise models
+- Tune `laser_max_range: 100.0` to match your lidar's actual range
+
+#### 2. **DWB Local Planner (Controller) Parameters**
+Located under `controller_server:` → `FollowPath:` section:
+- `max_vel_x: 1.0` - Maximum forward speed (m/s)
+- `max_vel_theta: 0.5` - Maximum rotation speed (rad/s)
+- `acc_lim_x: 0.5` - Forward acceleration limit (m/s²)
+- `acc_lim_theta: 0.5` - Angular acceleration limit (rad/s²)
+- `vx_samples: 20` - Number of velocity samples for forward motion
+- `vtheta_samples: 40` - Number of velocity samples for rotation
+
+**To tune navigation behavior:**
+- **Faster navigation**: Increase `max_vel_x` and `max_vel_theta` (but respect wheelchair limits)
+- **Smoother motion**: Increase `acc_lim_x` and `acc_lim_theta` for gentler acceleration
+- **Better obstacle avoidance**: Increase `vx_samples` and `vtheta_samples` (more trajectory options)
+- **Critic weights**: Adjust `critic_scales` to prioritize different behaviors (path following vs. obstacle avoidance)
+
+#### 3. **Global Planner Parameters**
+Located under `planner_server:` → `GridBased:` section:
+- `tolerance: 0.5` - Goal tolerance (m)
+- `use_astar: false` - Uses Dijkstra by default (set to `true` for A* algorithm)
+- `allow_unknown: true` - Allow planning through unknown space
+
+**To change planner algorithm:**
+- **Dijkstra** (current): Guaranteed shortest path, slower
+- **A***: Faster, heuristic-based, may not be optimal
+- To switch to A*: Set `use_astar: true` in the `GridBased:` section
+
+#### 4. **Costmap Parameters**
+Located under `global_costmap:` and `local_costmap:` sections:
+
+**Global Costmap:**
+- `robot_radius: 0.4` - Robot footprint radius (m) - **IMPORTANT**: Match your wheelchair size
+- `inflation_radius: 0.55` - How far obstacles are "inflated" (safety margin)
+- `resolution: 0.05` - Map resolution (m/pixel) - lower = more detailed but slower
+
+**Local Costmap:**
+- `width: 3.0` / `height: 3.0` - Size of local planning window (m)
+- `update_frequency: 5.0` - How often to update (Hz)
+
+**To improve obstacle avoidance:**
+- Increase `inflation_radius` for larger safety margins
+- Adjust `robot_radius` to match actual wheelchair dimensions
+- Increase `update_frequency` for more responsive obstacle detection
+
+#### 5. **Layer Configuration**
+Costmaps use layers for different obstacle sources:
+
+**StaticLayer** - Loads obstacles from the map
+**ObstacleLayer** - Detects obstacles from lidar scans
+**InflationLayer** - Expands obstacles for safety
+
+**To add/remove layers:**
+- Modify the `plugins:` list in `global_costmap:` or `local_costmap:`
+- Example: Add `RangeSensorLayer` for additional sensor data
+
+### Making Changes
+
+1. **Edit the YAML file:**
+   ```bash
+   nano src/wheelchair_gazebo/config/nav2_params.yaml
+   ```
+
+2. **Rebuild the package:**
+   ```bash
+   colcon build --packages-select wheelchair_gazebo
+   source install/setup.bash
+   ```
+
+3. **Test your changes:**
+   ```bash
+   ros2 launch wheelchair_gazebo warehouse_with_nav2.launch.py \
+     map:=$(pwd)/src/wheelchair_gazebo/maps/mymap.yaml
+   ```
+
+### Recommended Tuning Workflow
+
+1. **Start with localization (AMCL)**: Ensure robot knows where it is accurately
+2. **Tune global planner**: Adjust tolerance and algorithm for path planning
+3. **Tune local planner (DWB)**: Adjust speeds, accelerations, and critic weights
+4. **Fine-tune costmaps**: Adjust inflation, resolution, and update frequencies
+5. **Test in simulation**: Use Gazebo to validate changes before real-world testing
+
+### Important Notes for Wheelchair
+
+- **Max speeds**: Wheelchair typically maxes at ~1.0 m/s forward, ~0.5 rad/s rotation
+- **Acceleration limits**: Wheelchairs have lower acceleration than robots - keep `acc_lim_x` ≤ 0.5
+- **Robot radius**: Current setting (0.4m) assumes wheelchair width ~0.8m - adjust if different
+- **Turning behavior**: DWB controller is tuned for differential drive (no lateral movement)
+
+### Additional Resources
+
+- **Nav2 Documentation**: https://navigation.ros.org/
+- **DWB Controller**: https://github.com/ros-planning/navigation2/tree/main/nav2_dwb_controller
+- **Parameter Reference**: See inline comments in `nav2_params.yaml` for detailed explanations
+
+---
 
 ## 📝 Notes
 
@@ -269,6 +430,7 @@ See [QUICK_START.md](./QUICK_START.md) for detailed troubleshooting steps, inclu
 - **Recommended speeds** for SLAM: Forward 0.3-0.5 m/s, Yaw 0.3-0.5 rad/s
 - **Camera** starts positioned behind the wheelchair for better view
 - User-generated maps are stored in `maps/` directory (gitignored)
+- **Nav2 launch** now includes RViz automatically - no need to launch separately
 
 ---
 

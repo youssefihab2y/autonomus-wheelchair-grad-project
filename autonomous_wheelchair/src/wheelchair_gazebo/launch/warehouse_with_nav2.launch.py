@@ -8,6 +8,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 import os
 
@@ -15,6 +16,7 @@ import os
 def generate_launch_description():
     # Package directories
     pkg_wheelchair_gazebo = FindPackageShare('wheelchair_gazebo')
+    pkg_nav2_bringup = FindPackageShare('nav2_bringup')
     
     # Launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
@@ -55,6 +57,25 @@ def generate_launch_description():
         ]
     )
     
+    # Launch RViz (delayed to ensure everything is running)
+    rviz_launch = TimerAction(
+        period=15.0,  # Wait 15 seconds for everything to initialize
+        actions=[
+            Node(
+                package='rviz2',
+                executable='rviz2',
+                name='rviz2',
+                output='screen',
+                arguments=['-d', PathJoinSubstitution([
+                    pkg_nav2_bringup,
+                    'rviz',
+                    'nav2_default_view.rviz'
+                ])],
+                parameters=[{'use_sim_time': use_sim_time}]
+            )
+        ]
+    )
+    
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -73,5 +94,6 @@ def generate_launch_description():
         ),
         warehouse_launch,
         nav2_launch,
+        rviz_launch,
     ])
 
