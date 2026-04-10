@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!--
+    ROS 2 Control Hardware Interface Configuration
+    Following official ROS 2 Control documentation patterns
+    Reference: https://control.ros.org/humble/doc/getting_started/getting_started.html
+  -->
+
+  <!-- ==================== ROS 2 CONTROL PARAMETERS ==================== -->
+  <!-- Consistent with URDF parameters -->
+  <xacro:property name="wheel_separation" value="0.52"/>      <!-- Lateral separation between left and right wheels (m) -->
+  <xacro:property name="wheel_radius" value="0.15"/>            <!-- Back wheel radius (m) - primary drive wheels -->
+  <xacro:property name="max_linear_velocity" value="1.0"/>          <!-- Maximum linear velocity (m/s) -->
+  <xacro:property name="max_angular_velocity" value="2.0"/>   <!-- Maximum angular velocity (rad/s) -->
+  <!-- Maximum wheel angular velocity: v = ω * r, so ω = v / r = 1.0 / 0.15 = 6.67 rad/s -->
+  <xacro:property name="max_wheel_angular_velocity" value="6.67"/>  <!-- Max wheel angular velocity (rad/s) -->
+
+  <!-- ==================== ROS 2 CONTROL HARDWARE INTERFACE ==================== -->
+  <!--
+    Official pattern for Gazebo Fortress (Gazebo Sim):
+    - type="system" for multi-joint hardware
+    - plugin: gz_ros2_control/GazeboSimSystem
+    - Each joint must have matching command and state interfaces
+  -->
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    
+    <!-- ==================== WHEEL JOINTS ==================== -->
+    <!--
+      Consistent joint naming convention (matches URDF):
+      - wheel1_joint: back_right_wheel (back right)
+      - wheel2_joint: back_left_wheel  (back left)
+      - wheel3_joint: front_right_wheel (front right)
+      - wheel4_joint: front_left_wheel  (front left)
+      
+      Controller mapping (from controllers.yaml):
+      - Left side wheels: wheel2_joint (back left), wheel4_joint (front left)
+      - Right side wheels: wheel1_joint (back right), wheel3_joint (front right)
+    -->
+    
+    <!-- wheel1_joint: Back Right Wheel -->
+    <!-- Note: Joint velocity interface uses angular velocity (rad/s), not linear velocity (m/s) -->
+    <!-- Max angular velocity = max_linear_velocity / wheel_radius = 1.0 / 0.15 = 6.67 rad/s -->
+    <joint name="wheel1_joint">
+      <command_interface name="velocity">
+        <param name="min">-${max_wheel_angular_velocity}</param>
+        <param name="max">${max_wheel_angular_velocity}</param>
+      </command_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="position"/>
+    </joint>
+    
+    <!-- wheel2_joint: Back Left Wheel -->
+    <joint name="wheel2_joint">
+      <command_interface name="velocity">
+        <param name="min">-${max_wheel_angular_velocity}</param>
+        <param name="max">${max_wheel_angular_velocity}</param>
+      </command_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="position"/>
+    </joint>
+    
+    <!-- wheel3_joint: Front Right Wheel -->
+    <joint name="wheel3_joint">
+      <command_interface name="velocity">
+        <param name="min">-${max_wheel_angular_velocity}</param>
+        <param name="max">${max_wheel_angular_velocity}</param>
+      </command_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="position"/>
+    </joint>
+    
+    <!-- wheel4_joint: Front Left Wheel -->
+    <joint name="wheel4_joint">
+      <command_interface name="velocity">
+        <param name="min">-${max_wheel_angular_velocity}</param>
+        <param name="max">${max_wheel_angular_velocity}</param>
+      </command_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="position"/>
+    </joint>
+  </ros2_control>
+
+</robot>

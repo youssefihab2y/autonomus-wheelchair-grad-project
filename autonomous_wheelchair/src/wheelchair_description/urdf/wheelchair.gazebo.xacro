@@ -1,0 +1,317 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ==================== CHASSIS (base frame) ==================== -->
+  <gazebo reference="chassis">
+    <turnGravityOff>false</turnGravityOff>
+  </gazebo>
+
+  <!-- ==================== GAZEBO MATERIALS ==================== -->
+  <gazebo reference="base_uplayer_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <material>Gazebo/Orange</material>
+  </gazebo>
+
+  <gazebo reference="camera_stand_link">
+    <material>Gazebo/Gray</material>
+  </gazebo>
+
+  <gazebo reference="back_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <gazebo reference="seat_link">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <!-- wheel1_link: Back Right Wheel -->
+  <gazebo reference="wheel1_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.15</maxDepth>  <!-- Back wheel radius -->
+  </gazebo>
+
+  <!-- wheel2_link: Back Left Wheel -->
+  <gazebo reference="wheel2_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.15</maxDepth>  <!-- Back wheel radius -->
+  </gazebo>
+
+  <!-- wheel3_link: Front Right Wheel -->
+  <gazebo reference="wheel3_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.095</maxDepth>  <!-- Front wheel radius -->
+  </gazebo>
+
+  <!-- wheel4_link: Front Left Wheel -->
+  <gazebo reference="wheel4_link">
+    <material>Gazebo/Black</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxDepth>0.095</maxDepth>  <!-- Front wheel radius -->
+  </gazebo>
+
+  <gazebo reference="imu_sensor_link">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+
+  <!-- ==================== DIRECT DIFF DRIVE PLUGIN ==================== -->
+  <!--
+    Direct Gazebo diff drive plugin for 4-wheel skid steer robot
+    
+    Official Documentation Reference:
+    - Gazebo Fortress DiffDrive Plugin: https://gazebosim.org/api/gazebo/6/diff__drive_8hh.html
+    
+    NOTE: The diff drive plugin only supports 2 joints (left and right).
+    For a 4-wheel robot, we use the back wheels as the primary drive wheels.
+    The front wheels will follow due to skid steer physics.
+    
+    Configuration:
+    - left_joint: wheel2_joint (back left wheel)
+    - right_joint: wheel1_joint (back right wheel)
+    - wheel_separation: 0.52 (lateral distance between left and right wheel centers in meters)
+    - wheel_radius: 0.15 (back wheel radius in meters - using back wheels for drive)
+    - odom_publish_frequency: 10 Hz
+    - odom_frame_id: odom (ROS standard odometry frame)
+    - robot_base_frame: base_uplayer_link (base frame where wheels are attached)
+    
+    Topic Configuration:
+    - cmd_vel: Uses default Gazebo topic (model/wheelchair/cmd_vel)
+    - odometry: Uses default Gazebo topic (model/wheelchair/odometry)
+    These are bridged to ROS topics via ros_gz_bridge in launch file.
+  -->
+  <gazebo>
+    <plugin filename="libignition-gazebo6-diff-drive-system.so"
+            name="gz::sim::systems::DiffDrive">
+      <left_joint>wheel2_joint</left_joint>      <!-- Back left wheel -->
+      <right_joint>wheel1_joint</right_joint>    <!-- Back right wheel -->
+      <wheel_separation>0.52</wheel_separation>  <!-- Lateral separation (m) -->
+      <wheel_radius>0.15</wheel_radius>         <!-- Back wheel radius (m) -->
+      <odom_publish_frequency>10</odom_publish_frequency>  <!-- 10 Hz - balanced rate for RViz -->
+      <odom_frame_id>odom</odom_frame_id>        <!-- Odometry frame (ROS standard) -->
+      <robot_base_frame>base_uplayer_link</robot_base_frame>  <!-- Base frame where wheels are attached (not chassis) -->
+      <!-- Fortress DiffDrive plugin supports explicit command/odom topic tags -->
+      <topic>cmd_vel</topic>                     <!-- Gazebo-side command topic -->
+      <odom_topic>odom</odom_topic>              <!-- Gazebo-side odometry topic -->
+    </plugin>
+  </gazebo>
+  
+  <!-- ==================== ROS 2 CONTROL PLUGIN (DISABLED) ==================== -->
+  <!--
+    DISABLED: Using direct diff drive plugin instead for better reliability
+    To re-enable ros2_control, uncomment below and comment out the diff drive plugin above
+    
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <robot_param>robot_description</robot_param>
+        <robot_param_node>robot_state_publisher</robot_param_node>
+        <parameters>$(find wheelchair_description)/config/controllers.yaml</parameters>
+      </plugin>
+    </gazebo>
+  -->
+
+  <!-- ==================== IMU SENSOR ==================== -->
+  <!-- === IMU (explicit topic + frame_id + plugin) === -->
+        <gazebo reference="imu_sensor_link">
+          <sensor name="imu_sensor" type="imu">
+            <always_on>true</always_on>
+            <update_rate>30</update_rate>  <!-- Reduced from 100 to 30 Hz for better performance -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
+      
+      <!-- explicit ros topic name and frame id to avoid auto-path surprises -->
+      <topic>/wheelchair/imu</topic>
+      <frame_id>imu_sensor_link</frame_id>
+      
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0002</stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0017</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0017</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0017</stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+      
+      <!-- plugin: explicit IMU system plugin (filename must match your installation) -->
+      <!-- For Gazebo Fortress, use the library filename with .so extension -->
+      <plugin filename="libignition-gazebo-imu-system.so" name="gz::sim::systems::Imu">
+        <topic>/wheelchair/imu</topic>
+        <frame_id>imu_sensor_link</frame_id>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- ==================== RGB CAMERA ==================== -->
+  <!-- === RGB Camera (namespaced topic, explicit frame id) === -->
+        <gazebo reference="camera_link">
+          <sensor name="camera_rgb" type="camera">
+            <always_on>true</always_on>
+            <update_rate>10</update_rate>  <!-- Reduced from 30 to 10 Hz for better performance -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
+            
+            <!-- explicit namespaced topic and frame -->
+            <topic>/wheelchair/camera/image_raw</topic>
+            <frame_id>camera_link</frame_id>
+            
+            <camera name="camera">
+              <horizontal_fov>1.047</horizontal_fov>
+              <image>
+                <width>320</width>  <!-- Reduced from 640 to 320 for better performance -->
+                <height>240</height>  <!-- Reduced from 480 to 240 for better performance -->
+                <format>R8G8B8</format>
+              </image>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      
+      <!-- Camera works through world's Sensors system plugin - no explicit plugin needed -->
+      <!-- Explicit topic name helps bridge find the correct topic -->
+    </sensor>
+  </gazebo>
+
+  <!-- ==================== DEPTH CAMERA ==================== -->
+  <!-- === Depth Camera (namespaced topics) === -->
+        <gazebo reference="camera_link">
+          <sensor name="depth_camera" type="depth_camera">
+            <always_on>true</always_on>
+            <update_rate>10</update_rate>  <!-- Reduced from 30 to 10 Hz for better performance -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
+            
+            <topic>/wheelchair/camera/depth</topic>
+            <frame_id>camera_link</frame_id>
+            
+            <camera name="depth_camera">
+              <image>
+                <width>320</width>  <!-- Reduced from 640 to 320 for better performance -->
+                <height>240</height>  <!-- Reduced from 480 to 240 for better performance -->
+                <format>R_FLOAT32</format>
+              </image>
+        <clip>
+          <near>0.1</near>
+          <far>50</far>
+        </clip>
+        <depth_camera>
+          <output>points</output>
+        </depth_camera>
+      </camera>
+      
+      <!-- Depth camera works through world's Sensors system plugin - no explicit plugin needed -->
+      <!-- Explicit topic name helps bridge find the correct topic -->
+    </sensor>
+  </gazebo>
+
+  <!-- ==================== LIDAR SENSOR ==================== -->
+  <!-- === GPU LIDAR (for RTX GPU systems) === -->
+        <gazebo reference="base_laser">
+          <sensor name="lidar" type="gpu_lidar">
+            <always_on>true</always_on>
+            <update_rate>5</update_rate>  <!-- Further reduced for SLAM stability -->
+            <visualize>false</visualize>  <!-- Disabled visualization to reduce lag -->
+            
+            <!-- namespaced topic - easier for bridge mapping -->
+            <topic>/wheelchair/scan</topic>
+            <frame_id>base_laser</frame_id>
+            
+            <!-- Ignore robot's own links to prevent self-detection -->
+            <!-- Note: Lidar is mounted on back_link, so back_link is ignored to prevent seeing the mounting surface -->
+            <ignore>
+              <link>chassis</link>
+              <link>base_uplayer_link</link>
+              <link>base_link</link>
+              <link>seat_link</link>
+              <link>back_link</link>  <!-- Back bar where lidar is mounted -->
+              <link>base_laser</link>  <!-- Ignore lidar itself -->
+              <link>camera_stand_link</link>
+              <link>camera_link</link>
+              <link>kinect_optical</link>
+              <link>imu_sensor_link</link>
+              <link>wheel1_link</link>
+              <link>wheel2_link</link>
+              <link>wheel3_link</link>
+              <link>wheel4_link</link>
+              <link>wheel3_caster_link</link>
+              <link>wheel4_caster_link</link>
+            </ignore>
+            
+            <lidar>
+              <scan>
+                <horizontal>
+                  <samples>180</samples>  <!-- Reduced from 360 to 180 for better performance -->
+                  <resolution>1</resolution>
+                  <min_angle>-3.14159</min_angle>
+                  <max_angle>3.14159</max_angle>
+                </horizontal>
+              </scan>
+              <range>
+                <min>0.1</min>
+                <max>10.0</max>
+                <resolution>0.05</resolution>  <!-- Reduced from 0.01 to 0.05 for better performance -->
+              </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </lidar>
+      
+      <!-- GPU lidar works through world's Sensors system plugin - no explicit plugin needed -->
+      <!-- Explicit topic name helps bridge find the correct topic -->
+    </sensor>
+  </gazebo>
+  
+
+</robot>
+

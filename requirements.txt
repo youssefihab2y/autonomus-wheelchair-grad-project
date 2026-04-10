@@ -1,0 +1,59 @@
+# Python Requirements for Autonomous Wheelchair Project
+#
+# Note: This project primarily uses ROS 2 packages managed via package.xml files.
+# Most dependencies are installed via the ROS 2 package manager (apt).
+#
+# Install ROS 2 and Gazebo packages first:
+#   sudo apt update
+#   sudo apt install -y \
+#     ros-humble-desktop \
+#     ros-humble-ros-gz-sim \
+#     ros-humble-ros-gz-bridge \
+#     ros-humble-robot-state-publisher \
+#     ros-humble-joint-state-publisher \
+#     ros-humble-teleop-twist-keyboard \
+#     ros-humble-rviz2 \
+#     ros-humble-tf2-ros \
+#     ros-humble-tf2-tools \
+#     ros-humble-nav-msgs \
+#     ros-humble-sensor-msgs \
+#     ros-humble-geometry-msgs \
+#     python3-colcon-common-extensions
+#
+# Optional: For Nav2 integration:
+#   sudo apt install -y \
+#     ros-humble-navigation2 \
+#     ros-humble-nav2-bringup \
+#     ros-humble-nav2-map-server
+
+# Optional: For SLAM mapping:
+#   sudo apt install -y \
+#     ros-humble-slam-toolbox \
+#     ros-humble-nav2-map-server
+#
+# Then, from the workspace root:
+#   pip install --upgrade pip
+#   pip install -r requirements.txt
+
+# Core Python packages (usually included with ROS 2 Humble)
+# These are listed for reference - install via ROS 2 package manager:
+# - rclpy (ROS 2 Python client library)
+# - launch (ROS 2 launch system)
+# - launch_ros (ROS 2 launch extensions)
+# - nav_msgs (Navigation messages)
+# - sensor_msgs (Sensor messages)
+# - geometry_msgs (Geometry messages)
+# - tf2_ros (TF2 ROS bindings)
+
+# Build and development tools
+setuptools>=65.0.0
+wheel>=0.38.0
+
+# Optional: Development and testing tools (uncomment if needed)
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+# pytest-ros>=0.1.0
+# flake8>=6.0.0
+# black>=23.0.0
+# mypy>=1.0.0
+

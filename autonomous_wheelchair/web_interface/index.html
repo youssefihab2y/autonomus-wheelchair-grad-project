@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomous Wheelchair - Web Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/roslib@1.3.0/build/roslib.min.js"></script>
+  <style>
+    :root {
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+      --transition: 0.22s ease;
+    }
+
+    html[data-theme="dark"] {
+      --bg:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 26%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 22%),
+        linear-gradient(180deg, #08101d 0%, #0b1120 40%, #0a0f1b 100%);
+      --panel: rgba(17, 24, 39, 0.88);
+      --panel-2: rgba(15, 23, 42, 0.92);
+      --panel-3: rgba(2, 6, 23, 0.5);
+      --border: rgba(148, 163, 184, 0.14);
+      --border-strong: rgba(56, 189, 248, 0.24);
+      --text: #e5eefc;
+      --muted: #94a3b8;
+      --soft: #cbd5e1;
+      --cyan: #38bdf8;
+      --cyan-2: #0ea5e9;
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --green-bg: rgba(34, 197, 94, 0.15);
+      --red: #f87171;
+      --red-bg: rgba(248, 113, 113, 0.16);
+      --amber: #fbbf24;
+      --amber-bg: rgba(251, 191, 36, 0.14);
+      --input-bg: rgba(2, 6, 23, 0.68);
+      --map-bg: #0b1220;
+      --grid-line: rgba(148, 163, 184, 0.03);
+      --btn-secondary-bg: rgba(148, 163, 184, 0.1);
+      --btn-secondary-hover: rgba(148, 163, 184, 0.16);
+      --overlay-bg: rgba(2, 6, 23, 0.76);
+      --modal-overlay: rgba(2, 6, 23, 0.6);
+      --logo-bg: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(59, 130, 246, 0.18));
+    }
+
+    html[data-theme="light"] {
+      --bg:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 24%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.11), transparent 20%),
+        linear-gradient(180deg, #eef6ff 0%, #e7f0fb 45%, #f7fbff 100%);
+      --panel: rgba(255, 255, 255, 0.9);
+      --panel-2: rgba(248, 250, 252, 0.96);
+      --panel-3: rgba(241, 245, 249, 0.88);
+      --border: rgba(15, 23, 42, 0.08);
+      --border-strong: rgba(14, 165, 233, 0.22);
+      --text: #0f172a;
+      --muted: #64748b;
+      --soft: #334155;
+      --cyan: #0284c7;
+      --cyan-2: #0ea5e9;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --green-bg: rgba(34, 197, 94, 0.12);
+      --red: #dc2626;
+      --red-bg: rgba(248, 113, 113, 0.12);
+      --amber: #d97706;
+      --amber-bg: rgba(251, 191, 36, 0.14);
+      --input-bg: rgba(255, 255, 255, 0.86);
+      --map-bg: #f8fafc;
+      --grid-line: rgba(100, 116, 139, 0.05);
+      --btn-secondary-bg: rgba(15, 23, 42, 0.05);
+      --btn-secondary-hover: rgba(15, 23, 42, 0.09);
+      --overlay-bg: rgba(255, 255, 255, 0.82);
+      --modal-overlay: rgba(15, 23, 42, 0.2);
+      --logo-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(37, 99, 235, 0.11));
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background var(--transition), color var(--transition);
+    }
+
+    body {
+      padding: 28px;
+    }
+
+    .dashboard-shell {
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+      padding: 22px 24px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--panel-2), var(--panel));
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
+      border-radius: 18px;
+      background: var(--logo-bg);
+      border: 1px solid var(--border-strong);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .logo svg {
+      width: 34px;
+      height: 34px;
+      fill: none;
+      stroke: var(--cyan);
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .brand .eyebrow {
+      color: var(--cyan);
+      font-size: 0.82rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 2.2vw, 2.35rem);
+      line-height: 1.05;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.94rem;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .status::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    .status.connected {
+      color: #16a34a;
+      background: var(--green-bg);
+      border-color: rgba(34, 197, 94, 0.22);
+    }
+
+    .status.disconnected {
+      color: #dc2626;
+      background: var(--red-bg);
+      border-color: rgba(248, 113, 113, 0.22);
+    }
+
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--btn-secondary-bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .icon-btn:hover:not(:disabled) {
+  background: var(--btn-secondary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(340px, 0.85fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 22px;
+    }
+
+    .card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  transition: background var(--transition), border-color var(--transition);
+}
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 18%);
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      padding: 22px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .connection-grid {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      min-width: 0;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 16px;
+      border-radius: 14px;
+      outline: none;
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--muted);
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.09);
+    }
+
+    button {
+      border: none;
+      outline: none;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .control-btn,
+    .layer-btn {
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 0.94rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: white;
+      box-shadow: 0 10px 24px rgba(14, 165, 233, 0.22);
+    }
+
+    .btn-secondary {
+      background: var(--btn-secondary-bg);
+      color: var(--soft);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+  background: var(--btn-secondary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 24px rgba(14, 165, 233, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.control-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 24px rgba(14, 165, 233, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.control-btn.stop:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(239, 68, 68, 0.28);
+}
+
+.layer-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14);
+}
+
+.theme-option:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14);
+}
+
+    .map-card .card-inner {
+      padding: 22px 22px 18px;
+    }
+
+    .map-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .layer-switcher {
+      display: inline-flex;
+      padding: 5px;
+      border-radius: 14px;
+      background: var(--panel-3);
+      border: 1px solid var(--border);
+      gap: 6px;
+    }
+
+    .layer-btn {
+      background: transparent;
+      color: var(--muted);
+      min-width: 120px;
+    }
+
+    .layer-btn.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(59, 130, 246, 0.16));
+      color: var(--text);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+    }
+
+    .map-shell {
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(56, 189, 248, 0.12);
+      background:
+        linear-gradient(180deg, var(--map-bg), var(--map-bg)),
+        repeating-linear-gradient(
+          0deg,
+          var(--grid-line) 0px,
+          var(--grid-line) 1px,
+          transparent 1px,
+          transparent 28px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          var(--grid-line) 0px,
+          var(--grid-line) 1px,
+          transparent 1px,
+          transparent 28px
+        );
+      min-height: 620px;
+    }
+
+    #mapCanvas {
+      width: 100%;
+      height: 620px;
+      min-height: 620px;
+      display: block;
+      background: transparent;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .map-overlay-label {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--overlay-bg);
+      color: var(--soft);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 700;
+      backdrop-filter: blur(10px);
+    }
+
+    .map-footer {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-stat,
+    .stat-box,
+    .panel-row,
+    .settings-row {
+      background: var(--panel-3);
+      border: 1px solid var(--border);
+    }
+
+    .mini-stat {
+      border-radius: 16px;
+      padding: 14px 15px;
+    }
+
+    .mini-stat-label,
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .mini-stat-value {
+      font-weight: 800;
+      font-size: 0.98rem;
+      color: var(--text);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-box {
+      padding: 16px;
+      border-radius: 18px;
+      min-height: 98px;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .stat-sub {
+      margin-top: 6px;
+      font-size: 0.82rem;
+      color: var(--cyan);
+    }
+
+    .value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      color: var(--cyan);
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .control-btn {
+      padding: 16px;
+      min-height: 58px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--text);
+      border: 1px solid rgba(56, 189, 248, 0.16);
+    }
+
+    .control-btn.stop {
+      background: rgba(248, 113, 113, 0.12);
+      border-color: rgba(248, 113, 113, 0.16);
+      grid-column: span 2;
+    }
+
+    .hint {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .hint strong {
+      color: var(--soft);
+    }
+
+    .panel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+    }
+
+    .panel-row .label {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .panel-row .strong {
+      color: var(--text);
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--modal-overlay);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 18px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(560px, 100%);
+      border-radius: 24px;
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+      padding: 20px 22px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title-wrap h3 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+    }
+
+    .modal-title-wrap p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .modal-close {
+      background: transparent;
+      color: var(--muted);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+    }
+
+    .modal-close:hover {
+  background: var(--btn-secondary-hover);
+  color: var(--text);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+    .settings-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 18px;
+    }
+
+    .settings-row h4 {
+      margin: 0 0 5px;
+      font-size: 0.96rem;
+    }
+
+    .settings-row p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      background: var(--panel-3);
+      border: 1px solid var(--border);
+      padding: 5px;
+      border-radius: 14px;
+      gap: 6px;
+    }
+
+    .theme-option {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .theme-option.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(59, 130, 246, 0.14));
+      color: var(--text);
+      border: 1px solid rgba(56, 189, 248, 0.14);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .status-good {
+  color: #22c55e !important;
+}
+
+.status-warn {
+  color: #f59e0b !important;
+}
+
+.status-bad {
+  color: #ef4444 !important;
+}
+
+.status-info {
+  color: var(--cyan) !important;
+}
+.health-good {
+  color: #22c55e !important;
+}
+
+.health-warn {
+  color: #f59e0b !important;
+}
+
+.health-bad {
+  color: #ef4444 !important;
+}
+
+.camera-shell {
+  position: relative;
+  min-height: 320px;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--panel-3), rgba(2, 6, 23, 0.72));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#rgbCameraFeed {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  max-height: 460px;
+  object-fit: cover;
+  display: none;
+}
+
+.camera-placeholder {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.camera-overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08);
+  z-index: 5;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239,68,68,0.6);
+  animation: livePulse 1.5s infinite;
+}
+
+.live-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f87171;
+}
+
+@keyframes livePulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.badge.safe {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.18);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.badge.warn {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.18);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.badge.danger {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.18);
+  background: rgba(239, 68, 68, 0.1);
+}
+    @media (max-width: 1180px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .topbar-right {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 16px;
+      }
+
+      .topbar-left {
+        align-items: flex-start;
+      }
+
+      .connection-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .map-footer,
+      .stats-grid,
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .control-btn.stop {
+        grid-column: span 1;
+      }
+
+      .map-shell,
+      #mapCanvas {
+        min-height: 460px;
+        height: 460px;
+      }
+
+      .settings-row {
+        grid-template-columns: 1fr;
+      }
+      .camera-shell,
+     #rgbCameraFeed {
+    min-height: 240px !important;
+    max-height: 300px !important;
+  }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <circle cx="9" cy="18" r="2.2"></circle>
+            <circle cx="18" cy="18" r="2.2"></circle>
+            <path d="M8.5 15.8V8.2a2.2 2.2 0 1 1 4.4 0v2.1h2.6a2.9 2.9 0 0 1 2.8 2.1l.8 2.9"></path>
+            <path d="M8.5 12.3h5.1"></path>
+            <path d="M10.5 5.8h.01"></path>
+            <path d="M6.2 18H4.8"></path>
+          </svg>
+        </div>
+
+        <div class="brand">
+          <span class="eyebrow">Smart Mobility Interface</span>
+          <h1> AUTO-NAVX Dashboard</h1>
+          <p>Real-time navigation, map interaction, ROS 2 control, and assistive mobility monitoring.</p>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+          <svg id="themeIcon" viewBox="0 0 24 24">
+            <path d="M12 3v2.2"></path>
+            <path d="M12 18.8V21"></path>
+            <path d="M3 12h2.2"></path>
+            <path d="M18.8 12H21"></path>
+            <path d="M5.6 5.6l1.5 1.5"></path>
+            <path d="M16.9 16.9l1.5 1.5"></path>
+            <path d="M5.6 18.4l1.5-1.5"></path>
+            <path d="M16.9 7.1l1.5-1.5"></path>
+            <circle cx="12" cy="12" r="3.5"></circle>
+          </svg>
+        </button>
+
+        <button class="icon-btn" onclick="openSettings()" title="Settings" aria-label="Open settings">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8.5A3.5 3.5 0 1 1 12 15.5A3.5 3.5 0 0 1 12 8.5Z"></path>
+            <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a1.2 1.2 0 0 1 0 1.7l-1 1a1.2 1.2 0 0 1-1.7 0l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a1.2 1.2 0 0 1-1.2 1.2h-1.6A1.2 1.2 0 0 1 11.2 20v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a1.2 1.2 0 0 1-1.7 0l-1-1a1.2 1.2 0 0 1 0-1.7l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4A1.2 1.2 0 0 1 2.8 13.2v-1.4A1.2 1.2 0 0 1 4 10.6h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a1.2 1.2 0 0 1 0-1.7l1-1a1.2 1.2 0 0 1 1.7 0l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V4A1.2 1.2 0 0 1 10.6 2.8h1.4A1.2 1.2 0 0 1 13.2 4v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a1.2 1.2 0 0 1 1.7 0l1 1a1.2 1.2 0 0 1 0 1.7l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6h.2A1.2 1.2 0 0 1 21.2 11.8v1.4A1.2 1.2 0 0 1 20 14.4h-.2a1 1 0 0 0-.4.6Z"></path>
+          </svg>
+        </button>
+
+        <div id="status" class="status disconnected">Disconnected from ROS 2 (rosbridge)</div>
+      </div>
+    </header>
+
+    <main class="main-grid">
+      <section class="stack">
+        <article class="card map-card">
+          <div class="card-inner">
+            <div class="map-toolbar">
+              <div class="section-head" style="margin-bottom:0;">
+                <div class="section-title-wrap">
+                  <h2 class="section-title">Navigation Map</h2>
+                  <p class="section-subtitle">Interactive occupancy view with web-based goal publishing.</p>
+                </div>
+              </div>
+
+              <div class="layer-switcher">
+                <button id="btnStatic" class="layer-btn active" onclick="setMapLayer('static')">Static Map</button>
+                <button id="btnCostmap" class="layer-btn" onclick="setMapLayer('costmap')">Costmap</button>
+              </div>
+            </div>
+
+            <div class="map-shell">
+              <div class="map-overlay-label">Click anywhere on the map to publish a goal pose</div>
+              <canvas id="mapCanvas"></canvas>
+            </div>
+
+            <div class="map-footer">
+              <div class="mini-stat">
+                <div class="mini-stat-label">Map Stream</div>
+                <div class="mini-stat-value" id="mapStatus">Fetching...</div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-label">Resolution</div>
+                <div class="mini-stat-value" id="mapRes">-</div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-label">Grid Size</div>
+                <div class="mini-stat-value" id="mapSize">-</div>
+              </div>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div class="section-title-wrap">
+                <h2 class="section-title">Front RGB Camera</h2>
+                <p class="section-subtitle">Live front-facing visual feed from the wheelchair camera.</p>
+              </div>
+              <span class="badge" id="cameraBadge">Camera Offline</span>
+            </div>
+        
+            <div class="camera-shell">
+
+              <div class="camera-overlay">
+                <span class="live-dot"></span>
+                <span class="live-text">LIVE</span>
+              </div>
+            
+              <img id="rgbCameraFeed" alt="Front RGB Camera Feed" />
+            
+              <div class="camera-placeholder" id="cameraPlaceholder">
+                Camera feed unavailable
+              </div>
+            
+            </div>
+          </div>
+        </article>
+        
+      </section>
+
+      <aside class="stack">
+        <article class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div class="section-title-wrap">
+                <h2 class="section-title">ROS Bridge Connection</h2>
+                <p class="section-subtitle">Configure the WebSocket used to communicate with ROS 2.</p>
+              </div>
+              <span class="badge">Live Control</span>
+            </div>
+      
+            <div class="connection-grid">
+              <input
+                type="text"
+                id="rosUrl"
+                value="ws://localhost:9090"
+                placeholder="rosbridge WebSocket URL"
+              />
+              <button class="btn-primary" onclick="connect()">Connect</button>
+              <button class="btn-secondary" onclick="disconnect()">Disconnect</button>
+            </div>
+          </div>
+        </article>
+      
+        <article class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div class="section-title-wrap">
+                <h2 class="section-title">Robot Pose & Motion</h2>
+                <p class="section-subtitle">Odometry-based live position and motion feedback.</p>
+              </div>
+            </div>
+      
+            <div class="stats-grid">
+              <div class="stat-box">
+                <span class="stat-label">Position X</span>
+                <span class="stat-value value" id="poseX">-</span>
+                <div class="stat-sub">meters</div>
+              </div>
+      
+              <div class="stat-box">
+                <span class="stat-label">Position Y</span>
+                <span class="stat-value value" id="poseY">-</span>
+                <div class="stat-sub">meters</div>
+              </div>
+      
+              <div class="stat-box">
+                <span class="stat-label">Orientation Yaw</span>
+                <span class="stat-value value" id="poseYaw">-</span>
+                <div class="stat-sub">radians</div>
+              </div>
+      
+              <div class="stat-box">
+                <span class="stat-label">Linear Velocity</span>
+                <span class="stat-value value" id="velLin">-</span>
+                <div class="stat-sub">m/s</div>
+              </div>
+            </div>
+      
+            <div class="panel-list" style="margin-top:12px;">
+              <div class="panel-row">
+                <span class="label">Angular Velocity</span>
+                <span class="strong"><span class="value" id="velAng">-</span> rad/s</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      
+        <article class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div class="section-title-wrap">
+                <h2 class="section-title">Navigation Status</h2>
+                <p class="section-subtitle">Live feedback from the wheelchair navigation system.</p>
+              </div>
+              <span class="badge">Nav2</span>
+            </div>
+      
+            <div class="panel-list">
+              <div class="panel-row">
+                <span class="label">Navigation</span>
+                <span class="strong" id="navState">Idle</span>
+              </div>
+      
+              <div class="panel-row">
+                <span class="label">Localization</span>
+                <span class="strong" id="locState">Offline</span>
+              </div>
+      
+              <div class="panel-row">
+                <span class="label">Feedback</span>
+                <span class="strong" id="navFeedback">Waiting</span>
+              </div>
+      
+              <div class="panel-row">
+                <span class="label">ETA</span>
+                <span class="strong"><span id="navEta">0</span> s</span>
+              </div>
+      
+              <div class="panel-row">
+                <span class="label">Distance Remaining</span>
+                <span class="strong"><span id="navDistance">0.00</span> m</span>
+              </div>
+      
+              <div class="panel-row">
+                <span class="label">Time Taken</span>
+                <span class="strong"><span id="navTimeTaken">0</span> s</span>
+              </div>
+      
+              <div class="panel-row">
+                <span class="label">Recoveries</span>
+                <span class="strong" id="navRecoveries">0</span>
+              </div>
+            </div>
+      
+            <div class="controls-grid" style="margin-top: 14px;">
+              <button class="control-btn" id="btnPauseNav" disabled>Pause</button>
+              <button class="control-btn stop" id="btnResetNav" onclick="resetNavPanel()">Reset</button>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div class="section-title-wrap">
+                <h2 class="section-title">System Health</h2>
+                <p class="section-subtitle">Wheelchair power and system diagnostics.</p>
+              </div>
+              <span class="badge">System</span>
+            </div>
+        
+            <div class="panel-list">
+        
+              <div class="panel-row">
+                <span class="label">Battery Level</span>
+                <span class="strong"><span id="batteryLevel">100</span>%</span>
+              </div>
+        
+              <div class="panel-row">
+                <span class="label">System Mode</span>
+                <span class="strong" id="systemMode">Autonomous</span>
+              </div>
+        
+              <div class="panel-row">
+                <span class="label">ROS Bridge</span>
+                <span class="strong" id="rosHealth">Disconnected</span>
+              </div>
+        
+              <div class="panel-row">
+                <span class="label">Navigation Stack</span>
+                <span class="strong" id="navHealth">Idle</span>
+              </div>
+        
+              <div class="panel-row">
+                <span class="label">Sensors</span>
+                <span class="strong" id="sensorHealth">Active</span>
+              </div>
+        
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div class="section-title-wrap">
+                <h2 class="section-title">Manual Quick Controls</h2>
+                <p class="section-subtitle">Direct velocity command publishing for manual override.</p>
+              </div>
+            </div>
+      
+            <div class="controls-grid">
+              <button id="btnFwd" class="control-btn" onclick="sendVel(0.2, 0)" disabled>Forward</button>
+              <button id="btnBwd" class="control-btn" onclick="sendVel(-0.2, 0)" disabled>Backward</button>
+              <button id="btnLeft" class="control-btn" onclick="sendVel(0, 0.5)" disabled>Turn Left</button>
+              <button id="btnRight" class="control-btn" onclick="sendVel(0, -0.5)" disabled>Turn Right</button>
+              <button id="btnStop" class="control-btn stop" onclick="sendVel(0, 0)" disabled>Stop</button>
+            </div>
+      
+            <p class="hint">
+              <strong>Tip:</strong> this section works well as a manual fallback. Later, you can add
+              camera panels, sensor summaries, battery information, and advanced wheelchair status cards.
+            </p>
+          </div>
+        </article>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3 id="settingsTitle">Dashboard Settings</h3>
+          <p>Customize the interface and default behavior.</p>
+        </div>
+        <button class="modal-close" onclick="closeSettings()" aria-label="Close settings">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="settings-list">
+          <div class="settings-row">
+            <div>
+              <h4>Theme Mode</h4>
+              <p>Switch between dark mode and light mode based on user preference.</p>
+            </div>
+            <div class="theme-toggle">
+              <button id="themeDarkBtn" class="theme-option active" onclick="setTheme('dark')">Dark</button>
+              <button id="themeLightBtn" class="theme-option" onclick="setTheme('light')">Light</button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <h4>Default Map Layer</h4>
+              <p>Select which layer should appear first when the page loads.</p>
+            </div>
+            <select id="defaultMapLayerSelect" onchange="saveDefaultMapLayer()">
+              <option value="static">Static Map</option>
+              <option value="costmap">Costmap</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <h4>Interface Identity</h4>
+              <p>The current branding is tailored for an autonomous smart wheelchair control dashboard.</p>
+            </div>
+            <div class="badge">Wheelchair UI</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeSettings()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let ros = null;
+    let cmdVelListener = null;
+    let odomListener = null;
+    let goalPub = null;
+    let lastMap = null;
+    let navStartTime = null;
+    let navElapsedFrozen = 0;
+
+    const statusEl = document.getElementById('status');
+    const mapCanvas = document.getElementById('mapCanvas');
+    const ctx = mapCanvas.getContext('2d');
+    const settingsModal = document.getElementById('settingsModal');
+    const root = document.documentElement;
+
+    function setStatus(connected) {
+  statusEl.textContent = connected ? 'Connected to ROS 2 (rosbridge)' : 'Disconnected from ROS 2 (rosbridge)';
+  statusEl.className = 'status ' + (connected ? 'connected' : 'disconnected');
+
+  ['btnFwd','btnBwd','btnLeft','btnRight','btnStop'].forEach(id => {
+    document.getElementById(id).disabled = !connected;
+  });
+
+  if (connected) {
+    setHealthField('rosHealth', 'Connected', 'good');
+    setHealthField('systemMode', 'Autonomous', 'good');
+    setHealthField('sensorHealth', 'Active', 'good');
+  } else {
+    setHealthField('rosHealth', 'Disconnected', 'bad');
+    setHealthField('systemMode', 'Offline', 'bad');
+    setHealthField('sensorHealth', 'Offline', 'bad');
+    setHealthField('navHealth', 'Offline', 'bad');
+  }
+}
+
+    function connect() {
+      const url = document.getElementById('rosUrl').value;
+      if (ros) {
+        ros.close();
+        ros = null;
+      }
+
+      ros = new ROSLIB.Ros({ url });
+
+      ros.on('connection', () => {
+        console.log('Connected to rosbridge');
+        setStatus(true);
+        subscribe();
+        
+      });
+
+      ros.on('error', (err) => {
+        console.error('ROS error:', err);
+        setStatus(false);
+      });
+
+      ros.on('close', () => {
+        console.log('ROS connection closed');
+        setStatus(false);
+      });
+    }
+
+    function disconnect() {
+      if (ros) {
+        ros.close();
+        ros = null;
+      }
+      setStatus(false);
+    }
+
+    let mapLayer = localStorage.getItem('defaultMapLayer') || 'static';
+    const MAP_URL = 'http://localhost:5000/map.json';
+    const COSTMAP_URL = 'http://localhost:5000/costmap.json';
+
+    function setMapLayer(layer) {
+      mapLayer = layer;
+
+      const btnStatic = document.getElementById('btnStatic');
+      const btnCostmap = document.getElementById('btnCostmap');
+
+      btnStatic.classList.toggle('active', layer === 'static');
+      btnCostmap.classList.toggle('active', layer === 'costmap');
+    }
+
+    function saveDefaultMapLayer() {
+      const selected = document.getElementById('defaultMapLayerSelect').value;
+      localStorage.setItem('defaultMapLayer', selected);
+      setMapLayer(selected);
+    }
+
+    function fetchMapLoop() {
+      const url = mapLayer === 'costmap' ? COSTMAP_URL : MAP_URL;
+      fetch(url).then(r => r.json()).then((d) => {
+        const mapStatus = document.getElementById('mapStatus');
+
+        if (d.status === 'ok' && d.info && d.data) {
+          lastMap = d;
+          mapStatus.textContent = 'Receiving';
+          mapStatus.style.color = getComputedStyle(root).getPropertyValue('--green').trim() || '#16a34a';
+          document.getElementById('mapRes').textContent = d.info.resolution ?? '-';
+          document.getElementById('mapSize').textContent = `${d.info.width ?? 0} x ${d.info.height ?? 0}`;
+          drawMap(d);
+        } else if (d.status === 'waiting') {
+          mapStatus.textContent = 'Waiting for map';
+          mapStatus.style.color = getComputedStyle(root).getPropertyValue('--amber').trim() || '#d97706';
+        }
+      }).catch(() => {
+        const mapStatus = document.getElementById('mapStatus');
+        mapStatus.textContent = 'Server offline';
+        mapStatus.style.color = getComputedStyle(root).getPropertyValue('--red').trim() || '#dc2626';
+      });
+
+      setTimeout(fetchMapLoop, 500);
+    }
+
+    function subscribe() {
+      if (!ros) return;
+
+      if (odomListener) {
+        odomListener.unsubscribe();
+      }
+
+      odomListener = new ROSLIB.Topic({
+        ros: ros,
+        name: '/odom',
+        messageType: 'nav_msgs/Odometry'
+      });
+
+      odomListener.subscribe((msg) => {
+        const p = msg.pose?.pose?.position || {};
+        const o = msg.pose?.pose?.orientation || {};
+        const v = msg.twist?.twist?.linear || {};
+        const av = msg.twist?.twist?.angular || {};
+
+        document.getElementById('poseX').textContent = p.x != null ? p.x.toFixed(3) : '-';
+        document.getElementById('poseY').textContent = p.y != null ? p.y.toFixed(3) : '-';
+
+        const yaw = Math.atan2(
+          2 * ((o.w || 0) * (o.z || 0) + (o.x || 0) * (o.y || 0)),
+          1 - 2 * (((o.y || 0) * (o.y || 0)) + ((o.z || 0) * (o.z || 0)))
+        );
+
+        document.getElementById('poseYaw').textContent = Number.isFinite(yaw) ? yaw.toFixed(3) : '-';
+        document.getElementById('velLin').textContent = v.x != null ? v.x.toFixed(3) : '-';
+        document.getElementById('velAng').textContent = av.z != null ? av.z.toFixed(3) : '-';
+      });
+    }
+
+    
+    mapCanvas.addEventListener('click', (evt) => {
+  if (!ros || !ros.isConnected || !lastMap || !lastMap.info) return;
+
+  const rect = mapCanvas.getBoundingClientRect();
+
+  // Mouse position in displayed canvas
+  const sx = (evt.clientX - rect.left) / rect.width;
+  const sy = (evt.clientY - rect.top) / rect.height;
+
+  // Convert to internal canvas pixels
+  const px = sx * mapCanvas.width;
+  const py = sy * mapCanvas.height;
+
+  // Convert canvas -> world using the exact inverse transform
+  const goal = canvasToWorld(px, py, lastMap.info);
+
+  if (!goalPub) {
+    goalPub = new ROSLIB.Topic({
+      ros,
+      name: '/goal_pose',
+      messageType: 'geometry_msgs/PoseStamped'
+    });
+  }
+
+  const goalMsg = new ROSLIB.Message({
+    header: { frame_id: 'map' },
+    pose: {
+      position: { x: goal.x, y: goal.y, z: 0 },
+      orientation: { x: 0, y: 0, z: 0, w: 1 }
+    }
+  });
+
+  navStartTime = Date.now();
+  navElapsedFrozen = 0;
+  goalPub.publish(goalMsg);
+});
+    function toInt8Array(data) {
+      if (!data) return null;
+      if (Array.isArray(data)) return data;
+
+      if (typeof data === 'string') {
+        try {
+          const binary = atob(data);
+          const arr = [];
+          for (let i = 0; i < binary.length; i++) {
+            const c = binary.charCodeAt(i);
+            arr.push(c > 127 ? c - 256 : c);
+          }
+          return arr;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      if (data.buffer) {
+        return Array.from(new Int8Array(data.buffer, data.byteOffset, data.byteLength));
+      }
+
+      return null;
+    }
+
+    function cellToCanvas(mx, my, w, h) {
+  // Keep the rotated/flipped view that matches your preferred RViz-like look
+  return {
+    px: (h - 1) - my,
+    py: (w - 1) - mx
+  };
+}
+
+function canvasToCell(px, py, w, h) {
+  // Exact inverse of cellToCanvas()
+  return {
+    mx: (w - 1) - py,
+    my: (h - 1) - px
+  };
+}
+
+function worldToCanvas(wx, wy, info) {
+  const w = info.width;
+  const h = info.height;
+  const res = info.resolution;
+  const ox = info.origin?.x ?? info.origin?.position?.x ?? 0;
+  const oy = info.origin?.y ?? info.origin?.position?.y ?? 0;
+
+  // Convert world -> map cell (cell center aligned)
+  const mx = (wx - ox) / res - 0.5;
+  const my = (wy - oy) / res - 0.5;
+
+  return cellToCanvas(mx, my, w, h);
+}
+
+function canvasToWorld(px, py, info) {
+  const w = info.width;
+  const h = info.height;
+  const res = info.resolution;
+  const ox = info.origin?.x ?? info.origin?.position?.x ?? 0;
+  const oy = info.origin?.y ?? info.origin?.position?.y ?? 0;
+
+  const cell = canvasToCell(px, py, w, h);
+
+  return {
+    x: (cell.mx + 0.5) * res + ox,
+    y: (cell.my + 0.5) * res + oy
+  };
+}
+function drawMap(msg) {
+  if (!msg || !msg.info) return;
+
+  const w = msg.info.width || 0;
+  const h = msg.info.height || 0;
+  if (w <= 0 || h <= 0) return;
+
+  const raw = toInt8Array(msg.data);
+  if (!raw || raw.length !== w * h) {
+    document.getElementById('mapStatus').textContent =
+      'Data format error (got ' + (raw?.length ?? 0) + ')';
+    document.getElementById('mapStatus').style.color = '#f87171';
+    return;
+  }
+
+  // Because of the chosen rotated/flipped transform:
+  // canvas width = map height, canvas height = map width
+  const cw = h;
+  const ch = w;
+
+  mapCanvas.width = cw;
+  mapCanvas.height = ch;
+
+  const imgData = ctx.createImageData(cw, ch);
+  const isCostmap = mapLayer === 'costmap';
+  const currentTheme = root.getAttribute('data-theme');
+
+  // Draw map using ONE consistent transform
+  for (let my = 0; my < h; my++) {
+    for (let mx = 0; mx < w; mx++) {
+      const srcIndex = mx + my * w;
+      const { px, py } = cellToCanvas(mx, my, w, h);
+      const dstIndex = (Math.round(px) + Math.round(py) * cw) * 4;
+
+      const v = raw[srcIndex];
+      let c = 120;
+
+      if (isCostmap) {
+        if (currentTheme === 'light') {
+          if (v === 0 || v === 255) c = 248;
+          else if (v >= 253) c = 30;
+          else if (v === 254) c = 80;
+          else c = Math.max(120, 255 - v);
+        } else {
+          if (v === 0 || v === 255) c = 250;
+          else if (v >= 253) c = 0;
+          else if (v === 254) c = 40;
+          else c = Math.max(80, 255 - v);
+        }
+      } else {
+        if (currentTheme === 'light') {
+          if (v === 0) c = 245;       // free
+          else if (v === 100) c = 50; // occupied
+          else if (v === -1) c = 180; // unknown
+        } else {
+          if (v === 0) c = 220;
+          else if (v === 100) c = 30;
+          else if (v === -1) c = 90;
+        }
+      }
+
+      imgData.data[dstIndex] = c;
+      imgData.data[dstIndex + 1] = c;
+      imgData.data[dstIndex + 2] = c;
+      imgData.data[dstIndex + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+
+  // Draw robot marker
+  if (msg.robot_pose) {
+    const rx = msg.robot_pose.x;
+    const ry = msg.robot_pose.y;
+    const yaw = msg.robot_pose.yaw || 0;
+
+    // Triangle size in world meters
+    const L = 0.35;   // forward length
+    const W = 0.18;   // half width
+
+    const tip = {
+      x: rx + L * Math.cos(yaw),
+      y: ry + L * Math.sin(yaw)
+    };
+
+    const left = {
+      x: rx - 0.55 * L * Math.cos(yaw) + W * Math.sin(yaw),
+      y: ry - 0.55 * L * Math.sin(yaw) - W * Math.cos(yaw)
+    };
+
+    const right = {
+      x: rx - 0.55 * L * Math.cos(yaw) - W * Math.sin(yaw),
+      y: ry - 0.55 * L * Math.sin(yaw) + W * Math.cos(yaw)
+    };
+
+    const pTip = worldToCanvas(tip.x, tip.y, msg.info);
+    const pLeft = worldToCanvas(left.x, left.y, msg.info);
+    const pRight = worldToCanvas(right.x, right.y, msg.info);
+
+    ctx.fillStyle = '#22c55e';
+    ctx.strokeStyle = '#14532d';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(pTip.px, pTip.py);
+    ctx.lineTo(pLeft.px, pLeft.py);
+    ctx.lineTo(pRight.px, pRight.py);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Draw goal marker
+  if (msg.goal_pose) {
+    const g = worldToCanvas(msg.goal_pose.x, msg.goal_pose.y, msg.info);
+
+    ctx.fillStyle = '#ef4444';
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(g.px, g.py, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
+    function sendVel(linear, angular) {
+      if (!ros) return;
+
+      if (!cmdVelListener) {
+        cmdVelListener = new ROSLIB.Topic({
+          ros: ros,
+          name: '/cmd_vel',
+          messageType: 'geometry_msgs/Twist'
+        });
+      }
+
+      const msg = new ROSLIB.Message({
+        linear: { x: linear, y: 0, z: 0 },
+        angular: { x: 0, y: 0, z: angular }
+      });
+
+      cmdVelListener.publish(msg);
+    }
+    function setNavField(id, text, type = 'info') {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  el.textContent = text;
+  el.classList.remove('status-good', 'status-warn', 'status-bad', 'status-info');
+
+  if (type === 'good') el.classList.add('status-good');
+  else if (type === 'warn') el.classList.add('status-warn');
+  else if (type === 'bad') el.classList.add('status-bad');
+  else el.classList.add('status-info');
+}
+function setHealthField(id, text, type = 'good') {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  el.textContent = text;
+  el.classList.remove('health-good', 'health-warn', 'health-bad');
+
+  if (type === 'good') el.classList.add('health-good');
+  else if (type === 'warn') el.classList.add('health-warn');
+  else el.classList.add('health-bad');
+}
+
+function updateNavigationPanel() {
+  const hasGoal = !!(lastMap && lastMap.goal_pose);
+  const velLin = parseFloat(document.getElementById('velLin').textContent);
+  const velAng = parseFloat(document.getElementById('velAng').textContent);
+
+  if (!ros || !ros.isConnected) {
+    setNavField('locState', 'Offline', 'bad');
+    setNavField('navState', 'Offline', 'bad');
+    setNavField('navFeedback', 'Waiting', 'warn');
+
+    document.getElementById('navEta').textContent = '0';
+    document.getElementById('navDistance').textContent = '0.00';
+    document.getElementById('navRecoveries').textContent = '0';
+
+    if (!navStartTime) {
+      document.getElementById('navTimeTaken').textContent = '0';
+    }
+
+    setHealthField('navHealth', 'Offline', 'bad');
+    setHealthField('systemMode', 'Offline', 'bad');
+    setHealthField('sensorHealth', 'Offline', 'bad');
+    return;
+  }
+
+  setNavField('locState', 'Active', 'good');
+  setHealthField('sensorHealth', 'Active', 'good');
+  setHealthField('systemMode', 'Autonomous', 'good');
+
+  if (hasGoal) {
+    setNavField('navState', 'Active', 'good');
+    setHealthField('navHealth', 'Running', 'good');
+
+    if (!navStartTime) {
+      navStartTime = Date.now();
+    }
+
+    const moving =
+      (Number.isFinite(velLin) && Math.abs(velLin) > 0.01) ||
+      (Number.isFinite(velAng) && Math.abs(velAng) > 0.01);
+
+    if (moving) {
+      setNavField('navFeedback', 'Navigating', 'info');
+    } else {
+      setNavField('navFeedback', 'Reached', 'good');
+    }
+
+    const elapsed = navStartTime
+      ? Math.floor((Date.now() - navStartTime) / 1000)
+      : navElapsedFrozen;
+
+    document.getElementById('navTimeTaken').textContent = elapsed.toString();
+
+    if (lastMap.robot_pose && lastMap.goal_pose) {
+      const dx = lastMap.goal_pose.x - lastMap.robot_pose.x;
+      const dy = lastMap.goal_pose.y - lastMap.robot_pose.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      document.getElementById('navDistance').textContent = dist.toFixed(2);
+
+      const currentSpeed =
+        (Number.isFinite(velLin) && Math.abs(velLin) > 0.03)
+          ? Math.abs(velLin)
+          : 0.20;
+
+      const eta = dist / currentSpeed;
+      document.getElementById('navEta').textContent = Math.max(0, Math.round(eta)).toString();
+
+      if (dist < 0.15) {
+        setNavField('navFeedback', 'Reached', 'good');
+        setNavField('navState', 'Completed', 'good');
+        setHealthField('navHealth', 'Completed', 'good');
+
+        if (navStartTime) {
+          navElapsedFrozen = Math.floor((Date.now() - navStartTime) / 1000);
+          navStartTime = null;
+        }
+      }
+    } else {
+      document.getElementById('navDistance').textContent = '0.00';
+      document.getElementById('navEta').textContent = '0';
+    }
+  } else {
+    setNavField('navState', 'Idle', 'warn');
+    setNavField('navFeedback', 'Waiting', 'warn');
+    document.getElementById('navEta').textContent = '0';
+    document.getElementById('navDistance').textContent = '0.00';
+    document.getElementById('navRecoveries').textContent = '0';
+
+    if (!navStartTime) {
+      document.getElementById('navTimeTaken').textContent = '0';
+    }
+
+    setHealthField('navHealth', 'Idle', 'warn');
+  }
+}
+function resetNavPanel() {
+  navStartTime = null;
+  navElapsedFrozen = 0;
+
+  setNavField('navState', 'Idle', 'warn');
+  setNavField('locState', ros && ros.isConnected ? 'Active' : 'Offline', ros && ros.isConnected ? 'good' : 'bad');
+  setNavField('navFeedback', 'Waiting', 'warn');
+
+  document.getElementById('navEta').textContent = '0';
+  document.getElementById('navDistance').textContent = '0.00';
+  document.getElementById('navTimeTaken').textContent = '0';
+  document.getElementById('navRecoveries').textContent = '0';
+
+  if (ros && ros.isConnected) {
+    setHealthField('navHealth', 'Idle', 'warn');
+    setHealthField('systemMode', 'Autonomous', 'good');
+    setHealthField('sensorHealth', 'Active', 'good');
+  } else {
+    setHealthField('navHealth', 'Offline', 'bad');
+    setHealthField('systemMode', 'Offline', 'bad');
+    setHealthField('sensorHealth', 'Offline', 'bad');
+  }
+}
+
+    function setTheme(theme) {
+      root.setAttribute('data-theme', theme);
+      localStorage.setItem('dashboardTheme', theme);
+
+      document.getElementById('themeDarkBtn').classList.toggle('active', theme === 'dark');
+      document.getElementById('themeLightBtn').classList.toggle('active', theme === 'light');
+
+      updateThemeIcon(theme);
+
+      if (lastMap) {
+        drawMap(lastMap);
+      }
+    }
+
+    function toggleTheme() {
+      const current = root.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+    }
+
+    function updateThemeIcon(theme) {
+      const themeIcon = document.getElementById('themeIcon');
+
+      if (theme === 'light') {
+        themeIcon.innerHTML = `
+          <path d="M21 12.8A8.8 8.8 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+        `;
+      } else {
+        themeIcon.innerHTML = `
+          <path d="M12 3v2.2"></path>
+          <path d="M12 18.8V21"></path>
+          <path d="M3 12h2.2"></path>
+          <path d="M18.8 12H21"></path>
+          <path d="M5.6 5.6l1.5 1.5"></path>
+          <path d="M16.9 16.9l1.5 1.5"></path>
+          <path d="M5.6 18.4l1.5-1.5"></path>
+          <path d="M16.9 7.1l1.5-1.5"></path>
+          <circle cx="12" cy="12" r="3.5"></circle>
+        `;
+      }
+    }
+
+    function openSettings() {
+      settingsModal.classList.add('show');
+    }
+
+    function closeSettings() {
+      settingsModal.classList.remove('show');
+    }
+
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        closeSettings();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeSettings();
+      }
+    });
+
+    function initializePreferences() {
+      const savedTheme = localStorage.getItem('dashboardTheme') || 'dark';
+      setTheme(savedTheme);
+
+      const savedDefaultMapLayer = localStorage.getItem('defaultMapLayer') || 'static';
+      document.getElementById('defaultMapLayerSelect').value = savedDefaultMapLayer;
+      setMapLayer(savedDefaultMapLayer);
+    }
+    function initializeCameraFeed() {
+  const img = document.getElementById('rgbCameraFeed');
+  const placeholder = document.getElementById('cameraPlaceholder');
+  const badge = document.getElementById('cameraBadge');
+
+  img.onload = () => {
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    badge.textContent = 'Camera Live';
+    badge.classList.add('safe');
+    badge.classList.remove('warn', 'danger');
+  };
+
+  img.onerror = () => {
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+    badge.textContent = 'Camera Offline';
+    badge.classList.add('warn');
+    badge.classList.remove('safe', 'danger');
+  };
+
+  img.src = 'http://localhost:8080/stream?topic=/camera/image';
+}
+
+    initializePreferences();
+    fetchMapLoop();
+    initializeCameraFeed();
+    setInterval(updateNavigationPanel, 500);
+    function simulateBattery() {
+  let level = parseInt(document.getElementById('batteryLevel').textContent);
+
+  if (level > 5) {
+    level -= 0.01;
+  }
+
+  document.getElementById('batteryLevel').textContent = level.toFixed(0);
+}
+
+setInterval(simulateBattery, 5000);
+  </script>
+</body>
+</html>

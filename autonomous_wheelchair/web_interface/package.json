@@ -1,0 +1,9 @@
+{
+  "name": "wheelchair-web-interface",
+  "version": "1.0.0",
+  "description": "Web dashboard for autonomous wheelchair (Gazebo + RViz + ROS 2)",
+  "scripts": {
+    "serve": "npx serve . -p 8080",
+    "start": "npx serve . -p 8080"
+  }
+}
