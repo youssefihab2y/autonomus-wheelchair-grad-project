@@ -410,7 +410,7 @@
     <!-- But wait, stand center is at 0.4525, stand top is at 0.4525+0.2175=0.67 -->
     <!-- Camera center should be at stand top + half camera height = 0.67 + 0.02 = 0.69 -->
     <!-- Relative to stand center: 0.69 - 0.4525 = 0.2375 -->
-    <origin xyz="0.0 0.0 0.2375" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.2375" rpy="0.0 0.2618 0.0"/>
   </joint>
 
   <!-- Kinect Optical Frame -->

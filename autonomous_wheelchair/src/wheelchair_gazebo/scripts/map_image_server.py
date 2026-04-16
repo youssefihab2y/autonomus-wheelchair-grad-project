@@ -115,15 +115,15 @@ class MapImageServer(Node):
         self._update_static()
         self._update_costmap()
 
-   # def cb_odom(self, msg: Odometry):
-        # Only use odom if we don't yet have a localized pose
-    #    if self.robot_pose is not None:
+    def cb_odom(self, msg: Odometry):
+        # Only use odom as fallback until AMCL pose is available.
+        if self.robot_pose is not None:
             return
-     #   p = msg.pose.pose.position
-      #  o = msg.pose.pose.orientation
-       # self.robot_pose = {'x': p.x, 'y': p.y, 'yaw': quat_to_yaw(o)}
-        #self._update_static()
-        #self._update_costmap()
+        p = msg.pose.pose.position
+        o = msg.pose.pose.orientation
+        self.robot_pose = {'x': p.x, 'y': p.y, 'yaw': quat_to_yaw(o)}
+        self._update_static()
+        self._update_costmap()
 
     def cb_goal(self, msg):
         p = msg.pose.position
